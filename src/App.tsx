@@ -8,6 +8,7 @@ import VehicleClaimFlow from './pages/VehicleClaimFlow';
 import ClaimSuccess from './pages/ClaimSuccess';
 import CameraTest from './pages/CameraTest';
 import MobileCameraTest from './pages/MobileCameraTest';
+import ClaimReview from './pages/admin/ClaimReview';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/claims/:claimId" element={<ClaimReview />} />
         <Route path="/design-system" element={<DesignSystem />} />
         <Route path="/claim/type-selection" element={<ClaimTypeSelection />} />
         <Route path="/claim/vehicle/new" element={<VehicleClaimFlow />} />

@@ -4,7 +4,7 @@ import gxaLogo from '../assets/gxa-dashboard-logo.png';
 import { 
   Bell, User, FileText, Clock, Users, BarChart, LogOut, Filter,
   TrendingUp, AlertCircle, CheckCircle, XCircle, Activity,
-  Calendar, ChevronRight, Search, Menu, X, Shield, Zap
+  Calendar, ChevronRight, Search, Menu, Shield, Zap, Download
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { claimsService, type Claim } from '../lib/supabase';
@@ -32,7 +32,15 @@ export function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const allClaims = await claimsService.getAllClaims();
+      const { data, error } = await claimsService.getAllClaims();
+      
+      if (error) {
+        console.error('Error fetching claims:', error);
+        setLoading(false);
+        return;
+      }
+      
+      const allClaims = data || [];
       setClaims(allClaims);
       
       // Calculate stats
@@ -40,7 +48,7 @@ export function AdminDashboard() {
       const pending = allClaims.filter(c => c.status === 'pending').length;
       const approved = allClaims.filter(c => c.status === 'approved').length;
       const rejected = allClaims.filter(c => c.status === 'rejected').length;
-      const totalAmount = allClaims.reduce((sum, c) => sum + (c.claim_amount || 0), 0);
+      const totalAmount = allClaims.reduce((sum, c) => sum + 50000, 0); // Mock amount for now
       
       setStats({
         total,
@@ -57,13 +65,40 @@ export function AdminDashboard() {
     }
   };
 
-  const handleStatusUpdate = async (claimNumber: string, newStatus: string) => {
+  const handleStatusUpdate = async (claimNumber: string, newStatus: 'pending' | 'approved' | 'rejected') => {
     try {
       await claimsService.updateClaimStatus(claimNumber, newStatus);
       await loadData(); // Reload data
     } catch (error) {
       console.error('Error updating status:', error);
     }
+  };
+
+  const exportReport = () => {
+    // Create CSV content
+    const headers = ['Claim Number', 'Customer', 'Type', 'Date', 'Amount', 'Status'];
+    const rows = filteredClaims.map(claim => [
+      claim.claim_number,
+      claim.user_name || 'N/A',
+      claim.claim_type || 'General',
+      new Date(claim.created_at).toLocaleDateString(),
+      claim.claim_amount ? `${claim.claim_amount} DJF` : 'N/A',
+      claim.status
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `claims_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const statsConfig = [
@@ -156,12 +191,12 @@ export function AdminDashboard() {
   });
 
   const sidebarItems = [
-    { icon: Activity, label: 'Dashboard', active: true },
-    { icon: FileText, label: 'Claims', count: stats.total },
-    { icon: Users, label: 'Customers' },
-    { icon: Shield, label: 'Policies' },
-    { icon: BarChart, label: 'Analytics' },
-    { icon: Zap, label: 'Automations' },
+    { icon: Activity, label: 'Dashboard', active: true, route: '/admin/dashboard' },
+    { icon: FileText, label: 'Claims', count: stats.total, route: '/admin/claims' },
+    { icon: Users, label: 'Customers', route: '/admin/customers' },
+    { icon: Shield, label: 'Policies', route: '/admin/policies' },
+    { icon: BarChart, label: 'Analytics', route: '/admin/analytics' },
+    { icon: Zap, label: 'Automations', route: '/admin/automations' },
   ];
 
   if (loading) {
@@ -247,6 +282,7 @@ export function AdminDashboard() {
               return (
                 <button
                   key={index}
+                  onClick={() => navigate(item.route)}
                   className={cn(
                     "w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200",
                     item.active 
@@ -258,7 +294,7 @@ export function AdminDashboard() {
                     <Icon className="h-5 w-5" />
                     <span className="font-medium">{item.label}</span>
                   </div>
-                  {item.count && (
+                  {item.count !== undefined && (
                     <span className={cn(
                       "px-2 py-1 text-xs rounded-full",
                       item.active ? "bg-white/20" : "bg-gray-200"
@@ -352,7 +388,11 @@ export function AdminDashboard() {
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
-                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl">
+                  <Button 
+                    onClick={exportReport}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
                     Export Report
                   </Button>
                 </div>
@@ -447,13 +487,29 @@ export function AdminDashboard() {
                             <Button 
                               size="sm" 
                               variant="outline"
+                              onClick={() => navigate(`/admin/claims/${claim.claim_number}`)}
                               className="hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 hover:text-white hover:border-transparent transition-all"
                             >
                               Review
                             </Button>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                              <ChevronRight className="h-4 w-4 text-gray-600" />
-                            </button>
+                            {claim.status === 'pending' && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleStatusUpdate(claim.claim_number, 'approved')}
+                                  className="p-2 hover:bg-green-100 rounded-lg transition-colors group/btn"
+                                  title="Approve"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-gray-600 group-hover/btn:text-green-600" />
+                                </button>
+                                <button
+                                  onClick={() => handleStatusUpdate(claim.claim_number, 'rejected')}
+                                  className="p-2 hover:bg-red-100 rounded-lg transition-colors group/btn"
+                                  title="Reject"
+                                >
+                                  <XCircle className="h-4 w-4 text-gray-600 group-hover/btn:text-red-600" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

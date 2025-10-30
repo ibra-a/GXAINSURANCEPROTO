@@ -11,6 +11,7 @@ export interface Claim {
   updated_at: string;
   claim_number: string;
   user_name: string;
+  user_email?: string;
   policy_number: string;
   contact_email: string;
   contact_phone: string;
@@ -23,6 +24,8 @@ export interface Claim {
   photo_urls: string[];
   status: 'pending' | 'approved' | 'rejected';
   admin_notes: string | null;
+  claim_type?: string;
+  claim_amount?: number;
 }
 
 export const claimsService = {
@@ -68,13 +71,23 @@ export const claimsService = {
 
   async updateClaimStatus(claimId: string, status: 'pending' | 'approved' | 'rejected', adminNotes?: string) {
     const updates: any = { status, updated_at: new Date().toISOString() };
-    if (adminNotes) updates.admin_notes = adminNotes;
+    if (adminNotes !== undefined) updates.admin_notes = adminNotes;
     
     const { data, error } = await supabase
       .from('claims')
       .update(updates)
-      .eq('id', claimId)
+      .eq('claim_number', claimId)
       .select();
+    
+    return { data, error };
+  },
+  
+  async getClaimByNumber(claimNumber: string) {
+    const { data, error } = await supabase
+      .from('claims')
+      .select('*')
+      .eq('claim_number', claimNumber)
+      .single();
     
     return { data, error };
   }
