@@ -1185,8 +1185,8 @@ export default function VehicleClaimFlow() {
                             <div className="relative w-full h-64">
                               <input
                                 type="file"
-                                accept="image/*"
-                                capture="environment"
+                                accept="image/*;capture=camera"
+                                capture="camera"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {

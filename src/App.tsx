@@ -7,6 +7,7 @@ import ClaimTypeSelection from './pages/ClaimTypeSelection';
 import VehicleClaimFlow from './pages/VehicleClaimFlow';
 import ClaimSuccess from './pages/ClaimSuccess';
 import CameraTest from './pages/CameraTest';
+import MobileCameraTest from './pages/MobileCameraTest';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/claim/vehicle/new" element={<VehicleClaimFlow />} />
         <Route path="/claim/success" element={<ClaimSuccess />} />
         <Route path="/camera-test" element={<CameraTest />} />
+        <Route path="/mobile-camera-test" element={<MobileCameraTest />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
