@@ -24,11 +24,11 @@ export default function MobileCameraTest() {
       <div className="space-y-4">
         {/* Method 1: Standard capture */}
         <div className="border p-4 rounded">
-          <h2 className="font-semibold mb-2">Method 1: capture="camera"</h2>
+          <h2 className="font-semibold mb-2">Method 1: capture="user"</h2>
           <input
             type="file"
             accept="image/*"
-            capture="camera"
+            capture="user"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -86,7 +86,7 @@ export default function MobileCameraTest() {
           <h2 className="font-semibold mb-2">Method 4: Only capture, no accept</h2>
           <input
             type="file"
-            capture="camera"
+            capture="environment"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
