@@ -1182,7 +1182,7 @@ export default function VehicleClaimFlow() {
                               </div>
                             </div>
                           ) : (
-                            <div className="relative w-full h-64">
+                            <div className="relative w-full">
                               <input
                                 type="file"
                                 accept="image/*"
@@ -1194,19 +1194,92 @@ export default function VehicleClaimFlow() {
                                   }
                                 }}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                id={`photo-${photo.id}`}
                               />
-                              <div className="w-full h-full border-3 border-dashed border-gray-300 rounded-xl 
-                                hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-300
-                                flex flex-col items-center justify-center gap-4 group pointer-events-none">
-                                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-full 
-                                  shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
-                                  <Camera className="h-10 w-10 text-white" />
+                              <label
+                                htmlFor={`photo-${photo.id}`}
+                                className="block w-full cursor-pointer"
+                              >
+                                {/* Photo Guide Card */}
+                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                                  {/* Header */}
+                                  <div className="flex items-center gap-3 mb-3">
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg">
+                                      <Camera className="h-5 w-5 text-white" />
+                                    </div>
+                                    <h4 className="font-semibold text-gray-900">{photo.label}</h4>
+                                  </div>
+                                  
+                                  {/* Visual Guide */}
+                                  <div className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+                                    <div className="aspect-[4/3] border-3 border-dashed border-blue-400 rounded-lg 
+                                      flex items-center justify-center relative overflow-hidden">
+                                      {/* Car illustration based on photo type */}
+                                      <div className="text-blue-500 opacity-20 absolute inset-0 flex items-center justify-center">
+                                        <svg viewBox="0 0 200 150" className="w-full h-full max-w-[180px]">
+                                          {photo.id === 'front' && (
+                                            <g>
+                                              <rect x="40" y="60" width="120" height="60" rx="10" fill="currentColor" />
+                                              <rect x="30" y="80" width="140" height="30" rx="5" fill="currentColor" />
+                                              <circle cx="60" cy="120" r="15" fill="currentColor" />
+                                              <circle cx="140" cy="120" r="15" fill="currentColor" />
+                                              <path d="M 50 80 Q 100 60 150 80" stroke="currentColor" strokeWidth="2" fill="none" />
+                                              <text x="100" y="40" textAnchor="middle" className="text-2xl font-bold fill-current">FRONT</text>
+                                            </g>
+                                          )}
+                                          {photo.id === 'rear' && (
+                                            <g transform="rotate(180 100 75)">
+                                              <rect x="40" y="60" width="120" height="60" rx="10" fill="currentColor" />
+                                              <rect x="30" y="80" width="140" height="30" rx="5" fill="currentColor" />
+                                              <circle cx="60" cy="120" r="15" fill="currentColor" />
+                                              <circle cx="140" cy="120" r="15" fill="currentColor" />
+                                              <text x="100" y="40" textAnchor="middle" className="text-2xl font-bold fill-current" transform="rotate(180 100 40)">REAR</text>
+                                            </g>
+                                          )}
+                                          {photo.id === 'left' && (
+                                            <g>
+                                              <rect x="20" y="70" width="160" height="50" rx="10" fill="currentColor" />
+                                              <circle cx="50" cy="120" r="15" fill="currentColor" />
+                                              <circle cx="150" cy="120" r="15" fill="currentColor" />
+                                              <rect x="60" y="50" width="60" height="20" rx="5" fill="currentColor" />
+                                              <text x="100" y="40" textAnchor="middle" className="text-2xl font-bold fill-current">LEFT SIDE</text>
+                                            </g>
+                                          )}
+                                          {photo.id === 'right' && (
+                                            <g transform="scale(1,-1) translate(0,-150)">
+                                              <rect x="20" y="70" width="160" height="50" rx="10" fill="currentColor" />
+                                              <circle cx="50" cy="120" r="15" fill="currentColor" />
+                                              <circle cx="150" cy="120" r="15" fill="currentColor" />
+                                              <rect x="60" y="50" width="60" height="20" rx="5" fill="currentColor" />
+                                              <text x="100" y="110" textAnchor="middle" className="text-2xl font-bold fill-current" transform="scale(1,-1) translate(0,-220)">RIGHT SIDE</text>
+                                            </g>
+                                          )}
+                                        </svg>
+                                      </div>
+                                      <div className="relative z-10 text-center">
+                                        <Camera className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                                        <p className="text-sm font-medium text-blue-700">Tap to Open Camera</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Instructions */}
+                                  <div className="space-y-2">
+                                    <p className="text-sm text-gray-600 flex items-start gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                      <span>Include entire vehicle {photo.id} in frame</span>
+                                    </p>
+                                    <p className="text-sm text-gray-600 flex items-start gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                      <span>Ensure damage is clearly visible</span>
+                                    </p>
+                                    <p className="text-sm text-gray-600 flex items-start gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                      <span>Take photo in good lighting</span>
+                                    </p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-lg font-semibold text-gray-700 mb-1">Take Photo</p>
-                                  <p className="text-sm text-gray-500">Tap to open camera</p>
-                                </div>
-                              </div>
+                              </label>
                             </div>
                           )}
                         </div>
