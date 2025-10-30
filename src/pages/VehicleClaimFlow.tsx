@@ -430,30 +430,6 @@ export default function VehicleClaimFlow() {
         // Fall back to file input
       }
     }
-    
-    // Fallback to file input with camera capture
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    
-    // Set capture attribute differently for better mobile support
-    if (isMobile) {
-      // For mobile, use specific capture values
-      input.setAttribute('capture', 'camera');
-      // Some browsers need this exact string
-      input.setAttribute('accept', 'image/*;capture=camera');
-    } else {
-      input.capture = 'environment';
-    }
-    
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        processCapturedPhoto(file, photoId);
-      }
-    };
-    
-    input.click();
   };
   
   // Process captured photo from either camera or file input
