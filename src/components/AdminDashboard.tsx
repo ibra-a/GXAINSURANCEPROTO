@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gxaLogo from '../assets/gxa-dashboard-logo.png';
-import { Bell, User, FileText, Clock, CheckCircle, AlertCircle, Users, BarChart, LogOut, Filter } from 'lucide-react';
+import { Bell, User, FileText, Clock, Users, BarChart, LogOut, Filter } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function AdminDashboard() {

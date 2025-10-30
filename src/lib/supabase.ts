@@ -101,7 +101,7 @@ export const storageService = {
       };
 
       // Upload to Supabase Storage with metadata
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('claim-photos')
         .upload(filePath, file, {
           cacheControl: '3600',

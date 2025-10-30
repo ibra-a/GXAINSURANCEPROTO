@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gxaLogo from '../assets/gxa-dashboard-logo.png';
 import { 
-  Bell, User, FileText, Clock, CheckCircle, AlertCircle, 
-  Home, LogOut, Plus, TrendingUp, Shield, Car,
-  ChevronRight, Activity, Calendar, DollarSign,
-  Camera, Upload, FileCheck, Smartphone, Globe,
+  Bell, FileText, Clock, CheckCircle, 
+  LogOut, Plus, TrendingUp, Shield, Car,
+  ChevronRight, Activity, Calendar,
+  Camera, FileCheck, Globe,
   MapPin, Phone, Mail, Zap, X
 } from 'lucide-react';
 import { Button } from './ui/button';

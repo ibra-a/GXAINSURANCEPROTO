@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 export default function CameraTest() {
   const [photo, setPhoto] = useState<string | null>(null);
-  const [error, setError] = useState<string>('');
 
   const testCamera = (method: string) => {
     const input = document.createElement('input');
@@ -92,11 +91,6 @@ export default function CameraTest() {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
 
         {photo && (
           <div>

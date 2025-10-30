@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, FileText, Home, MessageCircle } from 'lucide-react';
+import { CheckCircle, Home, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useEffect } from 'react';
 
 export default function ClaimSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { claimNumber, claimId } = location.state || {};
+  const { claimNumber } = location.state || {};
 
   useEffect(() => {
     // Redirect if no claim data

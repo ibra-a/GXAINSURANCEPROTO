@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { 
   Car, Home, Heart, Plane, Package, Briefcase, 
-  Users, ChevronRight, Clock, FileText, ArrowLeft
+  ChevronRight, Clock, FileText, ArrowLeft
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import gxaLogo from '../assets/gxa-dashboard-logo.png';

@@ -728,7 +728,7 @@ export default function VehicleClaimFlow() {
             />
             
             <div className="relative flex items-center justify-between">
-              {steps.map((step, index) => {
+              {steps.map((step) => {
                 const Icon = step.icon;
                 const isActive = currentStep === step.id;
                 const isCompleted = currentStep > step.id;

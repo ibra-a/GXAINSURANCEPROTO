@@ -7,7 +7,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { NotificationToast } from '../components/NotificationToast';
 import { 
   ArrowLeft, Palette, Type, Box, Zap, Globe,
-  ChevronRight, Star, Heart, Shield, Bell,
+  Star, Heart, Shield, Bell,
   CheckCircle, X, AlertCircle, Info
 } from 'lucide-react';
 
