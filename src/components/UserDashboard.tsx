@@ -14,7 +14,6 @@ import { LoadingSpinner } from './LoadingSpinner';
 
 export function UserDashboard() {
   const navigate = useNavigate();
-  const [showNewClaim, setShowNewClaim] = useState(false);
   const [hoveredStat, setHoveredStat] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -300,7 +299,7 @@ export function UserDashboard() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <button
-              onClick={() => setShowNewClaim(true)}
+              onClick={() => navigate('/claim/type-selection')}
               className="group relative bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-2xl text-white hover:shadow-lg hover:scale-105 transition-all duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -500,87 +499,6 @@ export function UserDashboard() {
         </div>
       </main>
 
-      {/* Enhanced Digital Claim Submission Modal */}
-      {showNewClaim && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-8 transform transition-all duration-300 scale-100 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="relative inline-block">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full blur-xl opacity-50"></div>
-                <div className="relative inline-flex p-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                  <Camera className="h-8 w-8" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mt-4 mb-2">Digital Claim Submission</h3>
-              <p className="text-gray-600">
-                Submit your insurance claim in minutes through gxaonline.com
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  How it works
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      1
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Take Photos</p>
-                      <p className="text-xs text-gray-600">Capture damage from multiple angles</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      2
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Fill Details</p>
-                      <p className="text-xs text-gray-600">Provide accident information digitally</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      3
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Submit & Track</p>
-                      <p className="text-xs text-gray-600">Get instant claim ID and real-time updates</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm text-gray-700">Average processing time: 48 hours</span>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <Button 
-                variant="outline"
-                onClick={() => setShowNewClaim(false)} 
-                className="flex-1"
-              >
-                Close
-              </Button>
-              <Button 
-                onClick={() => {
-                  // In real app, navigate to claim submission form
-                  setShowNewClaim(false);
-                }} 
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                Start Claim
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
