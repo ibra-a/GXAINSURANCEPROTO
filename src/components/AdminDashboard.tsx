@@ -1,202 +1,483 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gxaLogo from '../assets/gxa-dashboard-logo.png';
-import { Bell, User, FileText, Clock, Users, BarChart, LogOut, Filter } from 'lucide-react';
+import { 
+  Bell, User, FileText, Clock, Users, BarChart, LogOut, Filter,
+  TrendingUp, AlertCircle, CheckCircle, XCircle, Activity,
+  Calendar, ChevronRight, Search, Menu, X, Shield, Zap
+} from 'lucide-react';
 import { Button } from './ui/button';
+import { claimsService, type Claim } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    totalAmount: 0,
+    avgProcessingTime: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const stats = [
-    { label: 'Total Claims', value: '256', icon: FileText, color: 'bg-purple-500' },
-    { label: 'Pending Review', value: '45', icon: Clock, color: 'bg-yellow-500' },
-    { label: 'Active Users', value: '1,234', icon: Users, color: 'bg-blue-500' },
-    { label: 'Monthly Revenue', value: '12.5M DJF', icon: BarChart, color: 'bg-green-500' },
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const allClaims = await claimsService.getAllClaims();
+      setClaims(allClaims);
+      
+      // Calculate stats
+      const total = allClaims.length;
+      const pending = allClaims.filter(c => c.status === 'pending').length;
+      const approved = allClaims.filter(c => c.status === 'approved').length;
+      const rejected = allClaims.filter(c => c.status === 'rejected').length;
+      const totalAmount = allClaims.reduce((sum, c) => sum + (c.claim_amount || 0), 0);
+      
+      setStats({
+        total,
+        pending,
+        approved,
+        rejected,
+        totalAmount,
+        avgProcessingTime: 2.5 // Mock for now
+      });
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (claimNumber: string, newStatus: string) => {
+    try {
+      await claimsService.updateClaimStatus(claimNumber, newStatus);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const statsConfig = [
+    { 
+      label: 'Total Claims', 
+      value: stats.total.toString(), 
+      icon: FileText, 
+      gradient: 'from-blue-500 to-indigo-600',
+      bgGradient: 'from-blue-50 to-indigo-50',
+      change: '+12%',
+      trend: 'up'
+    },
+    { 
+      label: 'Pending Review', 
+      value: stats.pending.toString(), 
+      icon: Clock, 
+      gradient: 'from-amber-500 to-orange-600',
+      bgGradient: 'from-amber-50 to-orange-50',
+      change: '-5%',
+      trend: 'down'
+    },
+    { 
+      label: 'Approved Claims', 
+      value: stats.approved.toString(), 
+      icon: CheckCircle, 
+      gradient: 'from-emerald-500 to-green-600',
+      bgGradient: 'from-emerald-50 to-green-50',
+      change: '+8%',
+      trend: 'up'
+    },
+    { 
+      label: 'Total Value', 
+      value: `${(stats.totalAmount / 1000).toFixed(1)}K DJF`, 
+      icon: BarChart, 
+      gradient: 'from-purple-500 to-pink-600',
+      bgGradient: 'from-purple-50 to-pink-50',
+      change: '+15%',
+      trend: 'up'
+    },
   ];
 
-  const claims = [
-    { id: 'CLM-2024-001', user: 'Ahmed Hassan', date: '2024-10-28', type: 'Collision', status: 'pending', amount: '45,000 DJF', priority: 'high' },
-    { id: 'CLM-2024-002', user: 'Fatima Ali', date: '2024-10-25', type: 'Theft', status: 'pending', amount: '120,000 DJF', priority: 'urgent' },
-    { id: 'CLM-2024-003', user: 'Omar Youssef', date: '2024-10-20', type: 'Fire Damage', status: 'approved', amount: '85,000 DJF', priority: 'medium' },
-    { id: 'CLM-2024-004', user: 'Amina Ibrahim', date: '2024-10-18', type: 'Vandalism', status: 'rejected', amount: '30,000 DJF', priority: 'low' },
-    { id: 'CLM-2024-005', user: 'Hassan Mohamed', date: '2024-10-15', type: 'Collision', status: 'approved', amount: '95,000 DJF', priority: 'medium' },
-  ];
-
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return Clock;
+      case 'approved': return CheckCircle;
+      case 'rejected': return XCircle;
+      default: return AlertCircle;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'text-red-600 font-semibold';
-      case 'high': return 'text-orange-600 font-semibold';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-gray-600';
-      default: return 'text-gray-600';
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'pending': 
+        return {
+          bg: 'bg-gradient-to-r from-amber-50 to-orange-50',
+          text: 'text-amber-700',
+          border: 'border-amber-200',
+          icon: 'text-amber-600'
+        };
+      case 'approved': 
+        return {
+          bg: 'bg-gradient-to-r from-emerald-50 to-green-50',
+          text: 'text-emerald-700',
+          border: 'border-emerald-200',
+          icon: 'text-emerald-600'
+        };
+      case 'rejected': 
+        return {
+          bg: 'bg-gradient-to-r from-red-50 to-pink-50',
+          text: 'text-red-700',
+          border: 'border-red-200',
+          icon: 'text-red-600'
+        };
+      default: 
+        return {
+          bg: 'bg-gray-50',
+          text: 'text-gray-700',
+          border: 'border-gray-200',
+          icon: 'text-gray-600'
+        };
     }
   };
 
-  const filteredClaims = filterStatus === 'all' 
-    ? claims 
-    : claims.filter(claim => claim.status === filterStatus);
+  const filteredClaims = claims.filter(claim => {
+    const matchesStatus = filterStatus === 'all' || claim.status === filterStatus;
+    const matchesSearch = claim.claim_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         claim.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         claim.claim_type?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const sidebarItems = [
+    { icon: Activity, label: 'Dashboard', active: true },
+    { icon: FileText, label: 'Claims', count: stats.total },
+    { icon: Users, label: 'Customers' },
+    { icon: Shield, label: 'Policies' },
+    { icon: BarChart, label: 'Analytics' },
+    { icon: Zap, label: 'Automations' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Enhanced Navbar with Blue Gradient */}
+      <nav className="fixed top-0 w-full z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-lg">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <img src={gxaLogo} alt="GXA Assurances" className="h-10" />
-              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors lg:hidden"
+              >
+                <Menu className="h-5 w-5 text-white" />
+              </button>
+              <img src={gxaLogo} alt="GXA Assurances" className="h-10 brightness-0 invert" />
+              <div className="hidden lg:block">
+                <h1 className="text-xl font-bold text-white">Admin Control Center</h1>
+              </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
+            <div className="flex items-center gap-3">
+              {/* Search Bar */}
+              <div className="hidden md:flex items-center bg-white/10 backdrop-blur-md rounded-lg px-3 py-1.5 gap-2">
+                <Search className="h-4 w-4 text-white/70" />
+                <input
+                  type="text"
+                  placeholder="Search claims..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-transparent text-white placeholder-white/50 outline-none w-48"
+                />
+              </div>
+              
+              {/* Notification Badge */}
+              <button className="relative p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                <Bell className="h-5 w-5 text-white" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  3
+                </span>
+              </button>
+              
+              {/* User Menu */}
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg px-3 py-1.5">
+                <User className="h-5 w-5 text-white" />
+                <span className="text-white font-medium hidden sm:block">Admin</span>
+              </div>
+              
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => navigate('/')}
-                className="gap-2"
+                className="gap-2 text-white hover:bg-white/20"
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:block">Logout</span>
               </Button>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Admin Control Panel
-          </h2>
-          <p className="text-gray-600">
-            Manage and process insurance claims efficiently
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div key={index} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${stat.color} p-3 rounded-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
+      <div className="flex pt-16">
+        {/* Sidebar */}
+        <aside className={cn(
+          "fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white shadow-xl transform transition-transform duration-300 z-40 lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="p-4 space-y-2">
+            {sidebarItems.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={index}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200",
+                    item.active 
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg" 
+                      : "hover:bg-gray-100 text-gray-700"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5" />
+                    <span className="font-medium">{item.label}</span>
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-                </div>
-                <p className="text-gray-600 text-sm">{stat.label}</p>
-              </div>
-            );
-          })}
-        </div>
+                  {item.count && (
+                    <span className={cn(
+                      "px-2 py-1 text-xs rounded-full",
+                      item.active ? "bg-white/20" : "bg-gray-200"
+                    )}>
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </aside>
 
-        {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Claims Management</h3>
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-500" />
-              <select 
-                value={filterStatus} 
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="all">All Claims</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-64 p-6">
+          {/* Stats Grid with Animations */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            {statsConfig.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <div 
+                  key={index} 
+                  className="relative group animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className={cn(
+                    "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500",
+                    stat.gradient
+                  )} />
+                  <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={cn(
+                        "p-3 rounded-xl bg-gradient-to-br shadow-lg",
+                        stat.bgGradient
+                      )}>
+                        <div className={cn("p-2 rounded-lg bg-gradient-to-br", stat.gradient)}>
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                          {stat.value}
+                        </p>
+                        <div className={cn(
+                          "flex items-center gap-1 text-sm font-medium mt-1",
+                          stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                        )}>
+                          <TrendingUp className={cn(
+                            "h-4 w-4",
+                            stat.trend === 'down' && "rotate-180"
+                          )} />
+                          {stat.change}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 font-medium">{stat.label}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Claims Table Section */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in" style={{ animationDelay: '400ms' }}>
+            {/* Table Header */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Claims Management</h3>
+                  <p className="text-sm text-gray-600 mt-1">Process and review insurance claims</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
+                    <Filter className="h-5 w-5 text-gray-500" />
+                    <select 
+                      value={filterStatus} 
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="bg-transparent outline-none text-sm font-medium text-gray-700"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl">
+                    Export Report
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Claim ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredClaims.map((claim, index) => {
+                    const StatusIcon = getStatusIcon(claim.status);
+                    const statusStyles = getStatusStyles(claim.status);
+                    return (
+                      <tr 
+                        key={claim.claim_number} 
+                        className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all duration-200 group"
+                        style={{ animationDelay: `${(index + 5) * 50}ms` }}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-pulse" />
+                            <span className="font-semibold text-gray-900">{claim.claim_number}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                              {claim.user_name?.charAt(0) || '?'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{claim.user_name || 'Unknown'}</p>
+                              <p className="text-sm text-gray-500">{claim.user_email || 'No email'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-3 py-1 text-sm font-medium bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full">
+                            {claim.claim_type || 'General'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            {new Date(claim.created_at).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="font-semibold text-gray-900">
+                            {claim.claim_amount ? `${claim.claim_amount.toLocaleString()} DJF` : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-full w-fit border",
+                            statusStyles.bg,
+                            statusStyles.border
+                          )}>
+                            <StatusIcon className={cn("h-4 w-4", statusStyles.icon)} />
+                            <span className={cn("text-sm font-medium capitalize", statusStyles.text)}>
+                              {claim.status}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 hover:text-white hover:border-transparent transition-all"
+                            >
+                              Review
+                            </Button>
+                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                              <ChevronRight className="h-4 w-4 text-gray-600" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  Showing {filteredClaims.length} of {claims.length} claims
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">Previous</Button>
+                  <Button variant="outline" size="sm">Next</Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Claims Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Claim ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredClaims.map((claim) => (
-                  <tr key={claim.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {claim.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {claim.user}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {claim.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {claim.type}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getPriorityColor(claim.priority)}`}>
-                      {claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(claim.status)}`}>
-                        {claim.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {claim.amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Button size="sm" variant="outline">
-                        Review
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
