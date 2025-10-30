@@ -1,0 +1,150 @@
+/* GXA Online Theme Variables */
+:root {
+  /* Primary Colors - Blue to Indigo */
+  --gxa-primary-50: #eff6ff;
+  --gxa-primary-100: #dbeafe;
+  --gxa-primary-200: #bfdbfe;
+  --gxa-primary-300: #93bbfc;
+  --gxa-primary-400: #5b8ff9;
+  --gxa-primary-500: #4169e1;
+  --gxa-primary-600: #3b5de7;
+  --gxa-primary-700: #2e4ab8;
+  --gxa-primary-800: #1e3a8a;
+  --gxa-primary-900: #1e2f6f;
+
+  /* Secondary Colors - Purple to Pink */
+  --gxa-secondary-400: #a855f7;
+  --gxa-secondary-500: #8b5cf6;
+  --gxa-secondary-600: #7c3aed;
+  --gxa-secondary-700: #6d28d9;
+
+  /* Accent Colors */
+  --gxa-accent-cyan: #06b6d4;
+  --gxa-accent-emerald: #10b981;
+  --gxa-accent-amber: #f59e0b;
+  --gxa-accent-rose: #f43f5e;
+
+  /* Gradients */
+  --gxa-gradient-primary: linear-gradient(to right, var(--gxa-primary-400), var(--gxa-primary-600));
+  --gxa-gradient-secondary: linear-gradient(to right, var(--gxa-secondary-400), #ec4899);
+  --gxa-gradient-accent: linear-gradient(to right, var(--gxa-accent-cyan), var(--gxa-primary-500));
+  --gxa-gradient-success: linear-gradient(to right, var(--gxa-accent-emerald), #14b8a6);
+  
+  /* Shadows */
+  --gxa-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --gxa-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --gxa-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --gxa-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
+  --gxa-radius-sm: 0.375rem;
+  --gxa-radius: 0.5rem;
+  --gxa-radius-lg: 0.75rem;
+  --gxa-radius-xl: 1rem;
+  --gxa-radius-2xl: 1.5rem;
+  
+  /* Animations */
+  --gxa-transition-fast: 150ms;
+  --gxa-transition: 300ms;
+  --gxa-transition-slow: 500ms;
+}
+
+/* Global Animations */
+@keyframes gxa-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes gxa-pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gxa-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Utility Classes */
+.gxa-gradient-text {
+  background: var(--gxa-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gxa-gradient-border {
+  position: relative;
+  background: white;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.gxa-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--gxa-gradient-primary);
+  z-index: -1;
+}
+
+.gxa-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.gxa-float-animation {
+  animation: gxa-float 6s ease-in-out infinite;
+}
+
+.gxa-pulse-animation {
+  animation: gxa-pulse-glow 2s ease-in-out infinite;
+}
+
+.gxa-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: gxa-shimmer 2s infinite;
+}
+
+/* Custom Scrollbar */
+.gxa-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.gxa-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.gxa-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gxa-gradient-primary);
+  border-radius: 4px;
+}
+
+.gxa-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gxa-primary-700);
+}
