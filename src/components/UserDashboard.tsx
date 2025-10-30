@@ -6,11 +6,13 @@ import {
   LogOut, Plus, TrendingUp, Shield, Car,
   ChevronRight, Activity, Calendar,
   Camera, FileCheck, Globe,
-  MapPin, Phone, Mail, Zap, X
+  MapPin, Phone, Mail, Zap, X, Sparkles
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { claimsService, type Claim } from '../lib/supabase';
 import { LoadingSpinner } from './LoadingSpinner';
+import { cn } from '../lib/utils';
+import Navbar from './Navbar';
 import Footer from './Footer';
 
 export function UserDashboard() {
@@ -123,77 +125,38 @@ export function UserDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="text-center animate-fade-in">
+          <div className="relative inline-block">
+            <LoadingSpinner size="lg" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 blur-2xl opacity-20 animate-pulse" />
+          </div>
+          <p className="mt-6 text-gray-600 font-medium">Loading your dashboard...</p>
+          <p className="text-sm text-gray-500 mt-1">Fetching your claims from gxaonline.com</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with GXA Online Branding */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-indigo-500/5"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <img src={gxaLogo} alt="GXA Assurances" className="h-10 drop-shadow-sm" />
-              <div className="hidden md:flex items-center gap-2">
-                <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Claims Portal
-                </h1>
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                  Digital
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-                <Globe className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-700 font-medium">gxaonline.com</span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="relative hover:bg-blue-50"
-              >
-                <Bell className="h-5 w-5" />
-                {stats.pending > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
-                    {stats.pending}
-                  </span>
-                )}
-              </Button>
-              <div className="h-8 w-px bg-gray-200"></div>
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-medium shadow-md">
-                  {currentUser.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate('/')}
-                  className="gap-2 hover:bg-red-50 hover:text-red-600"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50 opacity-50" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/20 via-transparent to-transparent" />
+      
+      {/* Navbar */}
+      <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
         {/* Welcome Section with Digital Claims Focus */}
-        <div className="mb-8 relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-white">
+        <div className="mb-8 relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-2xl animate-fade-in">
+          {/* Animated sparkle effect */}
+          <div className="absolute top-4 right-4 animate-pulse">
+            <Sparkles className="h-6 w-6 text-yellow-300/60" />
+          </div>
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl transform -translate-x-48 translate-y-48"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl transform translate-x-32 -translate-y-32 animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl transform -translate-x-48 translate-y-48 animate-pulse" style={{ animationDelay: '1s' }}></div>
           </div>
           
           <div className="relative">
@@ -232,12 +195,16 @@ export function UserDashboard() {
           {statsConfig.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div
-                key={index}
-                className="group relative cursor-pointer transform transition-all duration-500 hover:scale-105"
-                onMouseEnter={() => setHoveredStat(index)}
-                onMouseLeave={() => setHoveredStat(null)}
-              >
+                <div
+                  key={index}
+                  className={cn(
+                    "group relative cursor-pointer transform transition-all duration-500 hover:scale-105 animate-fade-in",
+                    hoveredStat === index && "scale-105"
+                  )}
+                  style={{ animationDelay: `${index * 150}ms` }}
+                  onMouseEnter={() => setHoveredStat(index)}
+                  onMouseLeave={() => setHoveredStat(null)}
+                >
                 {/* Gradient Background Card */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity duration-300`}></div>
                 
@@ -296,7 +263,10 @@ export function UserDashboard() {
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">Quick Actions</h3>
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent flex-1 ml-4" />
+          </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <button
@@ -366,14 +336,18 @@ export function UserDashboard() {
         </div>
 
         {/* Recent Claims from Supabase */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900">Your Claims History</h3>
                 <p className="text-sm text-gray-500 mt-1">All your claims from gxaonline.com database</p>
               </div>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all"
+              >
                 View All Claims
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -382,10 +356,24 @@ export function UserDashboard() {
           
           <div className="divide-y divide-gray-100">
             {claims.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600">No claims found</p>
-                <p className="text-sm text-gray-500 mt-1">Submit your first claim to get started</p>
+              <div className="p-12 text-center">
+                <div className="relative inline-block">
+                  <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <div className="absolute -top-2 -right-2 bg-blue-100 rounded-full p-1">
+                    <Plus className="h-4 w-4 text-blue-600" />
+                  </div>
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">No claims yet</h4>
+                <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                  Submit your first claim online and track its progress in real-time
+                </p>
+                <Button 
+                  onClick={() => navigate('/claim/type-selection')}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:scale-105 transition-all"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Start Your First Claim
+                </Button>
               </div>
             ) : (
               claims.map((claim) => {
@@ -393,7 +381,11 @@ export function UserDashboard() {
                 const progress = claim.status === 'approved' ? 100 : claim.status === 'rejected' ? 100 : 50;
                 
                 return (
-                  <div key={claim.id} className="p-6 hover:bg-gray-50 transition-all cursor-pointer group">
+                  <div 
+                    key={claim.id} 
+                    className="p-6 hover:bg-gray-50 transition-all cursor-pointer group animate-fade-in border-l-4 border-transparent hover:border-blue-500"
+                    style={{ animationDelay: `${claims.indexOf(claim) * 100}ms` }}
+                  >
                     <div className="flex items-start gap-4">
                       <div className="p-3 bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg group-hover:scale-105 transition-transform">
                         <Icon className="h-5 w-5 text-gray-600" />

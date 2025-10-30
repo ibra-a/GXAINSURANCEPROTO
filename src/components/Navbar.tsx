@@ -4,7 +4,7 @@ import gxaLogo from '../assets/gxa-logo.png';
 import { 
   Menu, X, Phone, ChevronDown, Shield, Car, Home, 
   Heart, Briefcase, FileText, Users, LogIn, UserPlus,
-  Calculator, MessageCircle, Globe, ExternalLink
+  Calculator, MessageCircle, Globe, ExternalLink, LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -52,14 +52,15 @@ export default function Navbar() {
   ];
 
   const isAuthPage = location.pathname.includes('/dashboard') || location.pathname.includes('/admin');
+  const isLandingPage = location.pathname === '/';
 
   return (
     <nav className={cn(
       "fixed top-0 w-full z-50 transition-all duration-300",
-      isScrolled 
-        ? "bg-white/95 backdrop-blur-md shadow-lg" 
-        : "bg-gradient-to-r from-blue-900/95 via-indigo-900/95 to-purple-900/95 backdrop-blur-md",
-      isAuthPage && "bg-white/95 backdrop-blur-md shadow-lg"
+      // Keep gradient on landing page regardless of scroll
+      isLandingPage ? "bg-gradient-to-r from-blue-900/95 via-indigo-900/95 to-purple-900/95 backdrop-blur-md" :
+      // For other pages, use white background
+      "bg-white/95 backdrop-blur-md shadow-lg"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -74,17 +75,13 @@ export default function Navbar() {
               <div className="hidden sm:block">
                 <h1 className={cn(
                   "text-xl font-bold transition-colors",
-                  isScrolled || isAuthPage 
-                    ? "text-gray-900" 
-                    : "text-white"
+                  isLandingPage ? "text-white" : "text-gray-900"
                 )}>
                   GXA Assurances
                 </h1>
                 <p className={cn(
                   "text-xs transition-colors",
-                  isScrolled || isAuthPage 
-                    ? "text-gray-600" 
-                    : "text-blue-200"
+                  isLandingPage ? "text-blue-200" : "text-gray-600"
                 )}>
                   Le Pro qui Assure
                 </p>
@@ -104,9 +101,7 @@ export default function Navbar() {
                         onClick={() => setActiveDropdown(activeDropdown === item.label ? null : item.label)}
                         className={cn(
                           "flex items-center gap-1 py-2 font-medium transition-colors",
-                          isScrolled || isAuthPage 
-                            ? "text-gray-700 hover:text-blue-600" 
-                            : "text-white/90 hover:text-white"
+                          isLandingPage ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-blue-600"
                         )}
                       >
                         {item.label}
@@ -148,9 +143,7 @@ export default function Navbar() {
                       to={item.href!}
                       className={cn(
                         "py-2 font-medium transition-colors",
-                        isScrolled || isAuthPage 
-                          ? "text-gray-700 hover:text-blue-600" 
-                          : "text-white/90 hover:text-white"
+                        isLandingPage ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-blue-600"
                       )}
                     >
                       {item.label}
@@ -167,9 +160,7 @@ export default function Navbar() {
                 href="tel:+25321359911"
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all",
-                  isScrolled || isAuthPage
-                    ? "bg-orange-50 text-orange-600 hover:bg-orange-100"
-                    : "bg-orange-500/20 text-orange-300 hover:bg-orange-500/30"
+                  isLandingPage ? "bg-orange-500/20 text-orange-300 hover:bg-orange-500/30" : "bg-orange-50 text-orange-600 hover:bg-orange-100"
                 )}
               >
                 <Phone className="h-4 w-4" />
@@ -178,15 +169,13 @@ export default function Navbar() {
               </a>
 
               {/* Auth Buttons */}
-              {!isAuthPage && (
+              {!isAuthPage ? (
                 <>
                   <button
                     onClick={() => navigate('/user/dashboard')}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all",
-                      isScrolled || isAuthPage
-                        ? "text-gray-700 hover:text-blue-600"
-                        : "text-white/90 hover:text-white"
+                      isLandingPage ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-blue-600"
                     )}
                   >
                     <LogIn className="h-4 w-4" />
@@ -199,6 +188,14 @@ export default function Navbar() {
                     Get Quote
                   </button>
                 </>
+              ) : (
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
               )}
             </div>
           </div>
@@ -208,9 +205,7 @@ export default function Navbar() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={cn(
               "lg:hidden p-2 rounded-lg transition-colors",
-              isScrolled || isAuthPage
-                ? "text-gray-700 hover:bg-gray-100"
-                : "text-white hover:bg-white/10"
+              isLandingPage ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
             )}
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -220,8 +215,21 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 overflow-y-auto">
-          <div className="px-4 py-6 space-y-6">
+        <>
+          {/* Backdrop */}
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <div className={cn(
+            "lg:hidden fixed inset-x-0 top-20 shadow-xl z-40 max-h-[50vh] overflow-y-auto",
+            isLandingPage 
+              ? "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900" 
+              : "bg-white"
+          )}>
+            <div className="px-4 py-6 space-y-6">
             {/* Emergency Hotline Mobile */}
             <a
               href="tel:+25321359911"
@@ -233,10 +241,16 @@ export default function Navbar() {
 
             {/* Mobile Nav Items */}
             {navItems.map((item, index) => (
-              <div key={index} className="border-b border-gray-100 pb-4">
+              <div key={index} className={cn(
+                "border-b pb-4",
+                isLandingPage ? "border-white/20" : "border-gray-100"
+              )}>
                 {item.dropdown ? (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">{item.label}</h3>
+                    <h3 className={cn(
+                      "font-semibold mb-3",
+                      isLandingPage ? "text-white" : "text-gray-900"
+                    )}>{item.label}</h3>
                     <div className="space-y-2">
                       {item.dropdown.map((subItem, subIndex) => {
                         const Icon = subItem.icon;
@@ -245,12 +259,26 @@ export default function Navbar() {
                             key={subIndex}
                             to={subItem.href}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                            className={cn(
+                              "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                              isLandingPage 
+                                ? "hover:bg-white/10" 
+                                : "hover:bg-gray-50"
+                            )}
                           >
-                            <Icon className="h-5 w-5 text-blue-600" />
+                            <Icon className={cn(
+                              "h-5 w-5",
+                              isLandingPage ? "text-blue-300" : "text-blue-600"
+                            )} />
                             <div>
-                              <p className="font-medium text-gray-900">{subItem.label}</p>
-                              <p className="text-xs text-gray-600">{subItem.description}</p>
+                              <p className={cn(
+                                "font-medium",
+                                isLandingPage ? "text-white" : "text-gray-900"
+                              )}>{subItem.label}</p>
+                              <p className={cn(
+                                "text-xs",
+                                isLandingPage ? "text-blue-200" : "text-gray-600"
+                              )}>{subItem.description}</p>
                             </div>
                           </Link>
                         );
@@ -261,7 +289,12 @@ export default function Navbar() {
                   <Link
                     to={item.href!}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block py-3 font-medium text-gray-900 hover:text-blue-600"
+                    className={cn(
+                      "block py-3 font-medium",
+                      isLandingPage 
+                        ? "text-white hover:text-blue-300" 
+                        : "text-gray-900 hover:text-blue-600"
+                    )}
                   >
                     {item.label}
                   </Link>
@@ -270,7 +303,7 @@ export default function Navbar() {
             ))}
 
             {/* Mobile CTA Buttons */}
-            {!isAuthPage && (
+            {!isAuthPage ? (
               <div className="space-y-3">
                 <button
                   onClick={() => {
@@ -292,13 +325,35 @@ export default function Navbar() {
                   Get Quote
                 </button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    navigate('/');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </button>
+              </div>
             )}
 
             {/* Language Selector */}
-            <div className="pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-center gap-2 text-gray-600">
+            <div className={cn(
+              "pt-4 border-t",
+              isLandingPage ? "border-white/20" : "border-gray-100"
+            )}>
+              <div className={cn(
+                "flex items-center justify-center gap-2",
+                isLandingPage ? "text-white" : "text-gray-600"
+              )}>
                 <Globe className="h-4 w-4" />
-                <select className="bg-transparent outline-none text-sm">
+                <select className={cn(
+                  "bg-transparent outline-none text-sm",
+                  isLandingPage && "text-white [&>option]:text-gray-900"
+                )}>
                   <option>English</option>
                   <option>Français</option>
                   <option>العربية</option>
@@ -307,6 +362,7 @@ export default function Navbar() {
             </div>
           </div>
         </div>
+        </>
       )}
     </nav>
   );
