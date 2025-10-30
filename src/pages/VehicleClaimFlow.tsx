@@ -107,14 +107,26 @@ export default function VehicleClaimFlow() {
   ];
 
   const handlePhotoCapture = async (photoId: string) => {
-    // Check if we're on a mobile device
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Direct file input approach for better mobile compatibility
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
     
-    // Check if we're in a secure context (HTTPS required for camera)
-    const isSecureContext = window.isSecureContext || location.protocol === 'https:';
+    // Set capture attribute to force camera on mobile
+    input.setAttribute('capture', 'environment');
     
-    // Try to use MediaDevices API for better camera control
-    if (isMobile && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && isSecureContext) {
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        processCapturedPhoto(file, photoId);
+      }
+    };
+    
+    input.click();
+    return;
+    
+    // Advanced camera API (kept for future use)
+    if (false) {
       try {
         // Request camera permission
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -1194,21 +1206,32 @@ export default function VehicleClaimFlow() {
                               </div>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => handlePhotoCapture(photo.id)}
-                              className="w-full h-64 border-3 border-dashed border-gray-300 rounded-xl 
+                            <div className="relative w-full h-64">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    processCapturedPhoto(file, photo.id);
+                                  }
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              />
+                              <div className="w-full h-full border-3 border-dashed border-gray-300 rounded-xl 
                                 hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-300
-                                flex flex-col items-center justify-center gap-4 group"
-                            >
-                              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-full 
-                                shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
-                                <Camera className="h-10 w-10 text-white" />
+                                flex flex-col items-center justify-center gap-4 group pointer-events-none">
+                                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-full 
+                                  shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                                  <Camera className="h-10 w-10 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-lg font-semibold text-gray-700 mb-1">Take Photo</p>
+                                  <p className="text-sm text-gray-500">Tap to open camera</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-lg font-semibold text-gray-700 mb-1">Take Photo</p>
-                                <p className="text-sm text-gray-500">Tap to open camera</p>
-                              </div>
-                            </button>
+                            </div>
                           )}
                         </div>
                         
