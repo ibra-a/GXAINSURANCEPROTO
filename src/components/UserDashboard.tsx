@@ -11,6 +11,7 @@ import {
 import { Button } from './ui/button';
 import { claimsService, type Claim } from '../lib/supabase';
 import { LoadingSpinner } from './LoadingSpinner';
+import Footer from './Footer';
 
 export function UserDashboard() {
   const navigate = useNavigate();
@@ -499,6 +500,7 @@ export function UserDashboard() {
         </div>
       </main>
 
+      <Footer />
     </div>
   );
 }

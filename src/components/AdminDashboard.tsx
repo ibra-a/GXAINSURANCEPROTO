@@ -9,6 +9,7 @@ import {
 import { Button } from './ui/button';
 import { claimsService, type Claim } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import Footer from './Footer';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -534,6 +535,7 @@ export function AdminDashboard() {
           </div>
         </main>
       </div>
+      <Footer />
     </div>
   );
 }
