@@ -336,25 +336,44 @@ export default function VehicleClaimFlow() {
       // Upload photos to Supabase Storage
       const photoUrls: Record<string, string> = {};
       const photoMetadata = (claimData as any).photoMetadata || {};
+      let uploadedCount = 0;
       
-      for (const [key, file] of Object.entries(claimData.photoFiles)) {
+      // Validate that we have photos to upload
+      const photosToUpload = Object.entries(claimData.photoFiles).filter(([_, file]) => file);
+      if (photosToUpload.length === 0) {
+        throw new Error('No photos found. Please capture at least the required photos before submitting.');
+      }
+      
+      console.log(`Uploading ${photosToUpload.length} photos...`);
+      
+      for (const [key, file] of photosToUpload) {
         if (file) {
-          // Upload with the correct parameters and metadata if available
-          const { url, error } = await storageService.uploadClaimPhoto(
-            file as File, 
-            claimNumber,
-            key, // photoType (e.g., 'front', 'rear', 'left', 'right')
-            photoMetadata[key] // Pass additional metadata from camera capture
-          );
-          
-          if (!error && url) {
-            photoUrls[key] = url;
-          } else if (error) {
-            console.error(`Error uploading ${key} photo:`, error);
-            throw new Error(`Failed to upload ${key} photo: ${error.message || error}`);
+          try {
+            console.log(`Uploading ${key} photo...`);
+            // Upload with the correct parameters and metadata if available
+            const { url, error } = await storageService.uploadClaimPhoto(
+              file as File, 
+              claimNumber,
+              key, // photoType (e.g., 'front', 'rear', 'left', 'right')
+              photoMetadata[key] // Pass additional metadata from camera capture
+            );
+            
+            if (!error && url) {
+              photoUrls[key] = url;
+              uploadedCount++;
+              console.log(`✓ ${key} photo uploaded successfully`);
+            } else if (error) {
+              console.error(`Error uploading ${key} photo:`, error);
+              throw new Error(`Failed to upload ${key} photo: ${error.message || JSON.stringify(error)}`);
+            }
+          } catch (uploadError: any) {
+            console.error(`Upload failed for ${key}:`, uploadError);
+            throw new Error(`Photo upload failed: ${uploadError.message || uploadError}`);
           }
         }
       }
+      
+      console.log(`Successfully uploaded ${uploadedCount}/${photosToUpload.length} photos`);
       
       // Combine date and time for accident_datetime
       const accidentDateTime = claimData.incidentDate && claimData.incidentTime
@@ -402,8 +421,10 @@ export default function VehicleClaimFlow() {
 
       console.log('Claim successfully created:', data);
       
-      // Navigate to success page
-      navigate(`/claim/success?claimNumber=${claimNumber}`);
+      // Navigate to success page with claim number in state
+      navigate('/claim/success', { 
+        state: { claimNumber } 
+      });
       
     } catch (error: any) {
       console.error('Error submitting claim:', error);

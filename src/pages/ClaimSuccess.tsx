@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Home, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useEffect } from 'react';
@@ -6,11 +6,15 @@ import { useEffect } from 'react';
 export default function ClaimSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { claimNumber } = location.state || {};
+  const [searchParams] = useSearchParams();
+  
+  // Get claim number from state (preferred) or URL params (fallback)
+  const claimNumber = location.state?.claimNumber || searchParams.get('claimNumber');
 
   useEffect(() => {
     // Redirect if no claim data
     if (!claimNumber) {
+      console.warn('No claim number found, redirecting to dashboard');
       navigate('/user/dashboard');
     }
   }, [claimNumber, navigate]);
