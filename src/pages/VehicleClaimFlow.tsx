@@ -338,19 +338,19 @@ export default function VehicleClaimFlow() {
       
       for (const [key, file] of Object.entries(claimData.photoFiles)) {
         if (file) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${claimNumber}_${key}.${fileExt}`;
-          const filePath = `claims/${claimNumber}/${fileName}`;
-          
-          // Upload with metadata
+          // Upload with the correct parameters and metadata if available
           const { url, error } = await storageService.uploadClaimPhoto(
             file as File, 
-            filePath, 
-            photoMetadata[key] || {}
+            claimNumber,
+            key, // photoType (e.g., 'front', 'rear', 'left', 'right')
+            photoMetadata[key] // Pass additional metadata from camera capture
           );
           
           if (!error && url) {
             photoUrls[key] = url;
+          } else if (error) {
+            console.error(`Error uploading ${key} photo:`, error);
+            throw new Error(`Failed to upload ${key} photo: ${error.message || error}`);
           }
         }
       }

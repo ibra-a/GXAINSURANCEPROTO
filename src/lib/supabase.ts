@@ -94,13 +94,16 @@ export const claimsService = {
 };
 
 export const storageService = {
-  async uploadClaimPhoto(file: File, claimNumber: string, photoType: string): Promise<{ url: string | null; error: any }> {
+  async uploadClaimPhoto(file: File, claimNumber: string, photoType: string, additionalMetadata?: any): Promise<{ url: string | null; error: any }> {
     try {
       // Create a unique filename with timestamp to prevent overwrites
       const timestamp = Date.now();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${photoType}-${timestamp}.${fileExt}`;
-      const filePath = `${claimNumber}/${fileName}`;
+      const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
+      // Sanitize the filename to remove any special characters
+      const safePhotoType = photoType.replace(/[^a-zA-Z0-9-_]/g, '');
+      const safeClaimNumber = claimNumber.replace(/[^a-zA-Z0-9-_]/g, '');
+      const fileName = `${safePhotoType}-${timestamp}.${fileExt}`;
+      const filePath = `${safeClaimNumber}/${fileName}`;
 
       // Add metadata for audit trail
       const metadata = {
@@ -110,7 +113,8 @@ export const storageService = {
         uploadTime: new Date().toISOString(),
         fileSize: file.size.toString(),
         mimeType: file.type,
-        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
+        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+        ...additionalMetadata // Merge any additional metadata passed from camera capture
       };
 
       // Upload to Supabase Storage with metadata
