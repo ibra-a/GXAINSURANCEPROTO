@@ -130,18 +130,11 @@ export default function VehicleClaimFlow() {
   };
 
   const handleCameraCapture = (file: File, metadata: any) => {
-    console.log('handleCameraCapture called:', { file, metadata, currentPhotoType });
     const photoId = photoTypes.find(p => p.label === currentPhotoType)?.id;
-    console.log('Found photoId:', photoId);
-    
-    if (photoId && file) {
-      console.log('Processing photo with ID:', photoId);
+    if (photoId) {
       processCapturedPhoto(file, photoId, metadata);
       setShowCamera(false);
       setCurrentPhotoType('');
-    } else {
-      console.error('Failed to find photoId or file is missing:', { photoId, file, currentPhotoType });
-      alert('Error: Could not process photo. Please try again.');
     }
   };
   
@@ -182,23 +175,18 @@ export default function VehicleClaimFlow() {
     };
     
     // Store the file for upload
-    console.log('Storing photo file:', { photoId, fileName: file.name, fileSize: file.size, fileType: file.type });
-    setClaimData(prev => {
-      const updated = {
-        ...prev,
-        photoFiles: {
-          ...prev.photoFiles,
-          [photoId]: file
-        },
-        // Store metadata temporarily
-        ...{ photoMetadata: {
-          ...(prev as any).photoMetadata,
-          [photoId]: metadata
-        }}
-      } as any;
-      console.log('Updated claimData photoFiles:', updated.photoFiles);
-      return updated;
-    });
+    setClaimData(prev => ({
+      ...prev,
+      photoFiles: {
+        ...prev.photoFiles,
+        [photoId]: file
+      },
+      // Store metadata temporarily
+      ...{ photoMetadata: {
+        ...(prev as any).photoMetadata,
+        [photoId]: metadata
+      }}
+    } as any));
     
     // Create preview
     const reader = new FileReader();
@@ -327,17 +315,49 @@ export default function VehicleClaimFlow() {
           errors.push('Please provide more details (at least 50 characters)');
         }
         break;
+
+      case 5: // Review & Submit - Check that we have photo files ready to upload
+        const requiredPhotos = ['front', 'rear', 'left', 'right'];
+        const missingPhotos = requiredPhotos.filter(photoId => {
+          return !claimData.photoFiles[photoId as keyof typeof claimData.photoFiles];
+        });
+        if (missingPhotos.length > 0) {
+          errors.push(`Missing photo files: ${missingPhotos.join(', ')}`);
+        }
+        break;
     }
 
     return { valid: errors.length === 0, errors };
   };
 
-  const canProceedToNext = () => {
-    const validation = validateStep(currentStep);
-    return validation.valid;
+  const canSubmitClaim = () => {
+    // Check if we have all required photo files
+    const requiredPhotos = ['front', 'rear', 'left', 'right'];
+    const hasAllPhotos = requiredPhotos.every(photoId => {
+      return claimData.photoFiles[photoId as keyof typeof claimData.photoFiles] !== null;
+    });
+    
+    // Also validate step 4 (description)
+    const step4Validation = validateStep(4);
+    
+    return hasAllPhotos && step4Validation.valid;
   };
 
   const handleSubmit = async () => {
+    // Debug: Log current state
+    console.log('=== SUBMIT ATTEMPT ===');
+    console.log('Photo files:', claimData.photoFiles);
+    console.log('Photo previews:', claimData.photos);
+    console.log('Can submit?', canSubmitClaim());
+    
+    if (!canSubmitClaim()) {
+      const step5Validation = validateStep(5);
+      const step4Validation = validateStep(4);
+      const errors = [...step5Validation.errors, ...step4Validation.errors];
+      alert(`Cannot submit: ${errors.join(', ')}`);
+      return;
+    }
+    
     setSubmitting(true);
     try {
       // Generate claim number with timestamp for uniqueness
@@ -346,20 +366,13 @@ export default function VehicleClaimFlow() {
       const claimNumber = `GXAVC${timestamp}${randomNum}`;
       
       // Upload photos to Supabase Storage
-      console.log('=== SUBMITTING CLAIM ===');
-      console.log('Claim data photoFiles:', claimData.photoFiles);
-      console.log('Claim data photos (previews):', claimData.photos);
-      
       const photoUrls: Record<string, string> = {};
       const photoMetadata = (claimData as any).photoMetadata || {};
       let uploadedCount = 0;
       
       // Validate that we have photos to upload
       const photosToUpload = Object.entries(claimData.photoFiles).filter(([_, file]) => file);
-      console.log('Photos to upload:', photosToUpload.map(([key, file]) => ({ key, fileName: (file as File).name, size: (file as File).size })));
-      
       if (photosToUpload.length === 0) {
-        console.error('ERROR: No photos found in photoFiles!');
         throw new Error('No photos found. Please capture at least the required photos before submitting.');
       }
       
@@ -1307,21 +1320,50 @@ export default function VehicleClaimFlow() {
                     <Camera className="h-5 w-5 text-blue-600" />
                     Photo Evidence
                   </h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {Object.entries(claimData.photos).map(([key, value]) => {
-                      if (value) {
-                        return (
-                          <div key={key} className="relative">
-                            <img src={value} alt={key} className="w-full h-20 object-cover rounded-lg" />
-                            <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
-                              {key}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {['front', 'rear', 'left', 'right'].map((photoId) => {
+                      const hasPreview = !!claimData.photos[photoId as keyof typeof claimData.photos];
+                      const hasFile = !!claimData.photoFiles[photoId as keyof typeof claimData.photoFiles];
+                      const previewUrl = claimData.photos[photoId as keyof typeof claimData.photos];
+                      
+                      return (
+                        <div key={photoId} className="relative">
+                          {hasPreview ? (
+                            <>
+                              <img 
+                                src={previewUrl || ''} 
+                                alt={photoId} 
+                                className="w-full h-20 object-cover rounded-lg" 
+                              />
+                              <div className="absolute top-1 right-1">
+                                {hasFile ? (
+                                  <div className="bg-green-500 rounded-full p-1">
+                                    <Check className="h-3 w-3 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className="bg-yellow-500 rounded-full p-1">
+                                    <AlertCircle className="h-3 w-3 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <span className="text-xs text-gray-500">Missing</span>
                             </div>
+                          )}
+                          <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded capitalize">
+                            {photoId}
                           </div>
-                        );
-                      }
-                      return null;
+                        </div>
+                      );
                     })}
                   </div>
+                  {['front', 'rear', 'left', 'right'].some(id => !claimData.photoFiles[id as keyof typeof claimData.photoFiles]) && (
+                    <div className="mt-3 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                      ⚠️ Some photos may not be ready for upload. Please go back to Step 3 and retake missing photos.
+                    </div>
+                  )}
                 </div>
                 
                 {/* Documents Summary */}
@@ -1426,10 +1468,10 @@ export default function VehicleClaimFlow() {
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={!canProceedToNext() || submitting}
+                disabled={!canSubmitClaim() || submitting}
                 className={`
                   group relative overflow-hidden transition-all duration-300 gap-2
-                  ${!canProceedToNext() || submitting ? 'opacity-50' : 'hover:shadow-lg hover:scale-105'}
+                  ${!canSubmitClaim() || submitting ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105'}
                   bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700
                   min-w-[160px]
                 `}
