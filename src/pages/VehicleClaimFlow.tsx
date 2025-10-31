@@ -739,18 +739,18 @@ export default function VehicleClaimFlow() {
         </div>
       </header>
 
-      {/* Professional Progress Indicator */}
+      {/* Professional Progress Indicator - Mobile Optimized */}
       <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           {/* Progress Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
-                <Shield className="h-5 w-5 text-white" />
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-1.5 sm:p-2 rounded-lg">
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Secure Claim Submission</h3>
-                <p className="text-sm text-gray-600">All data is encrypted and protected</p>
+                <h3 className="text-sm sm:text-lg font-semibold text-gray-900">Secure Claim Submission</h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">All data is encrypted and protected</p>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
@@ -759,21 +759,17 @@ export default function VehicleClaimFlow() {
             </div>
           </div>
 
-          {/* Enhanced Step Indicator */}
+          {/* Enhanced Step Indicator - Mobile Optimized */}
           <div className="relative">
-            {/* Background Connection Line */}
-            <div className="absolute top-10 left-0 right-0 h-1 bg-gray-300" style={{ 
-              left: '10%',
-              right: '10%'
-            }} />
+            {/* Background Connection Line - Properly positioned for mobile */}
+            <div className="absolute top-5 sm:top-10 left-[30px] right-[30px] h-0.5 sm:h-1 bg-gray-300" />
             
             {/* Progress Line */}
             <div 
-              className="absolute top-10 left-0 h-1 bg-gradient-to-r from-green-500 to-green-400 transition-all duration-700"
+              className="absolute top-5 sm:top-10 left-[30px] h-0.5 sm:h-1 bg-gradient-to-r from-green-500 to-green-400 transition-all duration-700"
               style={{ 
-                left: '10%',
-                width: `${Math.max(0, ((currentStep - 1) / (totalSteps - 1)) * 80)}%`
-              }} 
+                width: `calc(${Math.max(0, ((currentStep - 1) / (totalSteps - 1)) * 100)}% * (100% - 60px) / 100%)`
+              }}
             />
             
             <div className="relative flex items-center justify-between">
@@ -785,53 +781,58 @@ export default function VehicleClaimFlow() {
                 
                 return (
                   <div key={step.id} className="relative flex-1 flex flex-col items-center">
-                    {/* Step Circle */}
+                    {/* Step Circle - Much smaller for mobile */}
                     <div className="relative group cursor-pointer">
                       <div className={`
-                        relative z-10 w-20 h-20 rounded-full flex items-center justify-center
+                        relative z-10 w-10 h-10 sm:w-16 sm:h-16 rounded-full flex items-center justify-center
                         transition-all duration-500 transform
-                        ${isCompleted ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30' : ''}
-                        ${isActive ? 'bg-gradient-to-br from-blue-600 to-indigo-700 shadow-xl shadow-blue-600/40 scale-110' : ''}
-                        ${isUpcoming ? 'bg-white border-2 border-gray-300 hover:border-gray-400' : ''}
+                        ${isCompleted ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-sm sm:shadow-lg' : ''}
+                        ${isActive ? 'bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md sm:shadow-xl scale-110' : ''}
+                        ${isUpcoming ? 'bg-white border-2 border-gray-300' : ''}
                       `}>
                         {isCompleted ? (
-                          <Check className="h-10 w-10 text-white animate-[scale-in_0.3s_ease-out]" />
+                          <Check className="h-5 w-5 sm:h-8 sm:w-8 text-white animate-[scale-in_0.3s_ease-out]" />
                         ) : (
-                          <Icon className={`h-10 w-10 transition-colors ${
+                          <Icon className={`h-5 w-5 sm:h-8 sm:w-8 transition-colors ${
                             isActive ? 'text-white' : 'text-gray-400'
                           }`} />
                         )}
                         
-                        {/* Active Pulse Effect */}
+                        {/* Active Pulse Effect - Hidden on mobile to reduce visual clutter */}
                         {isActive && (
-                          <>
-                            <div className="absolute inset-0 rounded-full bg-blue-600 animate-ping opacity-20" />
-                            <div className="absolute inset-0 rounded-full bg-blue-600 animate-ping animation-delay-150 opacity-20" />
-                          </>
+                          <div className="hidden sm:block absolute inset-0 rounded-full bg-blue-600 animate-ping opacity-20" />
                         )}
                       </div>
                       
-                      {/* Step Number Badge */}
+                      {/* Step Number Badge - Smaller on mobile */}
                       <div className={`
-                        absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+                        absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold
                         transition-all duration-300 transform
-                        ${isCompleted ? 'bg-green-600 text-white scale-0' : ''}
+                        ${isCompleted ? 'bg-green-600 text-white' : ''}
                         ${isActive ? 'bg-blue-600 text-white shadow-md' : ''}
                         ${isUpcoming ? 'bg-gray-100 text-gray-600 border border-gray-300' : ''}
                       `}>
-                        {step.id}
+                        {isCompleted ? '✓' : step.id}
                       </div>
                     </div>
                     
-                    {/* Step Label */}
-                    <div className="mt-4 text-center">
-                      <p className={`text-sm font-semibold transition-colors ${
+                    {/* Step Label - Mobile optimized */}
+                    <div className="mt-1.5 sm:mt-3 text-center">
+                      <p className={`text-[10px] sm:text-sm font-semibold transition-colors whitespace-nowrap ${
                         isActive ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-600'
                       }`}>
-                        {step.title}
+                        {/* Show abbreviated text on mobile for active step only */}
+                        <span className={`sm:hidden ${isActive ? 'block' : 'hidden'}`}>
+                          {step.id === 1 && 'Details'}
+                          {step.id === 2 && 'Vehicle'}
+                          {step.id === 3 && 'Photos'}
+                          {step.id === 4 && 'Docs'}
+                          {step.id === 5 && 'Review'}
+                        </span>
+                        <span className="hidden sm:inline">{step.title}</span>
                       </p>
                       {isActive && (
-                        <p className="text-xs text-gray-500 mt-1">In Progress</p>
+                        <p className="text-[9px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">In Progress</p>
                       )}
                     </div>
                   </div>
