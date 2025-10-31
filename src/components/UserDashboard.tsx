@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import gxaLogo from '../assets/gxa-dashboard-logo.png';
 import { 
-  Bell, FileText, Clock, CheckCircle, 
-  LogOut, Plus, TrendingUp, Shield, Car,
+  FileText, Clock, CheckCircle, 
+  Plus, TrendingUp, Shield, Car,
   ChevronRight, Activity, Calendar,
   Camera, FileCheck, Globe,
   MapPin, Phone, Mail, Zap, X, Sparkles

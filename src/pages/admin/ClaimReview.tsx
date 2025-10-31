@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Calendar, Car, User, Phone, Mail, MapPin, 
+  ArrowLeft, Calendar, Car, User, Phone, Mail, 
   FileText, Camera, Shield, Clock, CheckCircle, XCircle,
   AlertCircle, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';

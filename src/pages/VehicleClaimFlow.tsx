@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Camera, Upload, FileText, 
-  Check, AlertCircle, MapPin, Calendar, Clock, 
+  Check, AlertCircle, MapPin, 
   Car, X, RotateCcw, CheckCircle, Shield,
   CalendarDays, Activity, ChevronRight
 } from 'lucide-react';

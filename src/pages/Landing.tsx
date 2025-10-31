@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import logoImage from '../assets/gxa-logo.png';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { Shield, TrendingUp, Users, Zap, Star, Award, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { Shield, TrendingUp, Users, Zap, Star, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function Landing() {
   const navigate = useNavigate();

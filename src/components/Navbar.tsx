@@ -1,27 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import gxaLogo from '../assets/gxa-logo.png';
 import { 
   Menu, X, Phone, ChevronDown, Shield, Car, Home, 
-  Heart, Briefcase, FileText, Users, LogIn, UserPlus,
-  Calculator, MessageCircle, Globe, ExternalLink, LogOut
+  Heart, Briefcase, FileText, Users, LogIn,
+  Calculator, MessageCircle, Globe, LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const products = [
     { icon: Car, label: 'Auto Insurance', href: '/products/auto', description: 'Comprehensive vehicle coverage' },
