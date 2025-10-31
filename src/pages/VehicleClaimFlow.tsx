@@ -355,51 +355,59 @@ export default function VehicleClaimFlow() {
         }
       }
       
-      // Create claim record
-      const { error } = await supabase.from('claims').insert({
+      // Combine date and time for accident_datetime
+      const accidentDateTime = claimData.incidentDate && claimData.incidentTime
+        ? new Date(`${claimData.incidentDate}T${claimData.incidentTime}`).toISOString()
+        : new Date().toISOString();
+
+      // Convert photoUrls object to array format expected by database
+      const photoUrlsArray = Object.values(photoUrls).filter(url => url);
+
+      // Create claim record matching the actual database schema
+      const claimRecord: any = {
         claim_number: claimNumber,
         status: 'pending',
-        claim_type: 'vehicle',
-        user_name: claimData.driverName,
-        user_email: claimData.driverEmail || 'user@example.com',
-        user_phone: claimData.driverPhone,
-        claim_amount: 0, // To be assessed
-        submission_date: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        details: {
-          incidentDate: claimData.incidentDate,
-          incidentTime: claimData.incidentTime,
-          incidentLocation: claimData.incidentLocation,
-          policeReport: claimData.policeReport,
-          policeReportNumber: claimData.policeReportNumber,
-          vehicle: {
-            make: claimData.vehicleMake,
-            model: claimData.vehicleModel,
-            year: claimData.vehicleYear,
-            plate: claimData.vehiclePlate,
-          },
-          driver: {
-            name: claimData.driverName,
-            phone: claimData.driverPhone,
-            email: claimData.driverEmail,
-            license: claimData.driverLicense,
-          },
-          description: claimData.accidentDescription,
-          photos: photoUrls,
-          photoMetadata: photoMetadata
-        }
-      });
+        user_name: claimData.driverName || 'Unknown',
+        contact_email: claimData.driverEmail || 'user@example.com',
+        contact_phone: claimData.driverPhone || '',
+        accident_datetime: accidentDateTime,
+        submission_datetime: new Date().toISOString(),
+        vehicle_plate: claimData.vehiclePlate || '',
+        vehicle_make: claimData.vehicleMake || '',
+        vehicle_model: claimData.vehicleModel || '',
+        accident_description: claimData.accidentDescription || '',
+        photo_urls: photoUrlsArray
+      };
+
+      // Add optional fields if they exist
+      if (claimData.vehicleYear) {
+        claimRecord.accident_description += `\n\nVehicle Year: ${claimData.vehicleYear}`;
+      }
+      if (claimData.incidentLocation) {
+        claimRecord.accident_description += `\n\nIncident Location: ${claimData.incidentLocation}`;
+      }
+      if (claimData.policeReport && claimData.policeReportNumber) {
+        claimRecord.accident_description += `\n\nPolice Report: ${claimData.policeReportNumber}`;
+      }
+
+      const { error, data } = await supabase.from('claims').insert(claimRecord).select();
       
       if (error) {
-        throw error;
+        console.error('Database error:', error);
+        console.error('Attempted to insert:', claimRecord);
+        throw new Error(`Database error: ${error.message || JSON.stringify(error)}`);
       }
+
+      console.log('Claim successfully created:', data);
       
       // Navigate to success page
       navigate(`/claim/success?claimNumber=${claimNumber}`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting claim:', error);
-      alert('Error submitting claim. Please try again.');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      alert(`Error submitting claim: ${errorMessage}\n\nPlease check the console for more details and try again.`);
+      // Don't navigate on error - let user retry
     } finally {
       setSubmitting(false);
     }
