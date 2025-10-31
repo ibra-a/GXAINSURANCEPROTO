@@ -130,11 +130,18 @@ export default function VehicleClaimFlow() {
   };
 
   const handleCameraCapture = (file: File, metadata: any) => {
+    console.log('handleCameraCapture called:', { file, metadata, currentPhotoType });
     const photoId = photoTypes.find(p => p.label === currentPhotoType)?.id;
-    if (photoId) {
+    console.log('Found photoId:', photoId);
+    
+    if (photoId && file) {
+      console.log('Processing photo with ID:', photoId);
       processCapturedPhoto(file, photoId, metadata);
       setShowCamera(false);
       setCurrentPhotoType('');
+    } else {
+      console.error('Failed to find photoId or file is missing:', { photoId, file, currentPhotoType });
+      alert('Error: Could not process photo. Please try again.');
     }
   };
   
@@ -175,18 +182,23 @@ export default function VehicleClaimFlow() {
     };
     
     // Store the file for upload
-    setClaimData(prev => ({
-      ...prev,
-      photoFiles: {
-        ...prev.photoFiles,
-        [photoId]: file
-      },
-      // Store metadata temporarily
-      ...{ photoMetadata: {
-        ...(prev as any).photoMetadata,
-        [photoId]: metadata
-      }}
-    } as any));
+    console.log('Storing photo file:', { photoId, fileName: file.name, fileSize: file.size, fileType: file.type });
+    setClaimData(prev => {
+      const updated = {
+        ...prev,
+        photoFiles: {
+          ...prev.photoFiles,
+          [photoId]: file
+        },
+        // Store metadata temporarily
+        ...{ photoMetadata: {
+          ...(prev as any).photoMetadata,
+          [photoId]: metadata
+        }}
+      } as any;
+      console.log('Updated claimData photoFiles:', updated.photoFiles);
+      return updated;
+    });
     
     // Create preview
     const reader = new FileReader();
@@ -334,13 +346,20 @@ export default function VehicleClaimFlow() {
       const claimNumber = `GXAVC${timestamp}${randomNum}`;
       
       // Upload photos to Supabase Storage
+      console.log('=== SUBMITTING CLAIM ===');
+      console.log('Claim data photoFiles:', claimData.photoFiles);
+      console.log('Claim data photos (previews):', claimData.photos);
+      
       const photoUrls: Record<string, string> = {};
       const photoMetadata = (claimData as any).photoMetadata || {};
       let uploadedCount = 0;
       
       // Validate that we have photos to upload
       const photosToUpload = Object.entries(claimData.photoFiles).filter(([_, file]) => file);
+      console.log('Photos to upload:', photosToUpload.map(([key, file]) => ({ key, fileName: (file as File).name, size: (file as File).size })));
+      
       if (photosToUpload.length === 0) {
+        console.error('ERROR: No photos found in photoFiles!');
         throw new Error('No photos found. Please capture at least the required photos before submitting.');
       }
       
