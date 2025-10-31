@@ -319,10 +319,13 @@ export default function VehicleClaimFlow() {
       case 5: // Review & Submit - Check that we have photo files ready to upload
         const requiredPhotos = ['front', 'rear', 'left', 'right'];
         const missingPhotos = requiredPhotos.filter(photoId => {
-          return !claimData.photoFiles[photoId as keyof typeof claimData.photoFiles];
+          const file = claimData.photoFiles[photoId as keyof typeof claimData.photoFiles];
+          const preview = claimData.photos[photoId as keyof typeof claimData.photos];
+          // Photo is missing if we have neither file nor preview
+          return !file && !preview;
         });
         if (missingPhotos.length > 0) {
-          errors.push(`Missing photo files: ${missingPhotos.join(', ')}`);
+          errors.push(`Missing photos: ${missingPhotos.join(', ')}`);
         }
         break;
     }
@@ -332,9 +335,13 @@ export default function VehicleClaimFlow() {
 
   const canSubmitClaim = () => {
     // Check if we have all required photo files
+    // A photo is valid if we have the actual File object OR the preview (for fallback)
     const requiredPhotos = ['front', 'rear', 'left', 'right'];
     const hasAllPhotos = requiredPhotos.every(photoId => {
-      return claimData.photoFiles[photoId as keyof typeof claimData.photoFiles] !== null;
+      const file = claimData.photoFiles[photoId as keyof typeof claimData.photoFiles];
+      const preview = claimData.photos[photoId as keyof typeof claimData.photos];
+      // Photo is valid if we have either the file OR a preview (preview means file was captured)
+      return !!file || !!preview;
     });
     
     // Also validate step 4 (description)
@@ -1359,9 +1366,13 @@ export default function VehicleClaimFlow() {
                       );
                     })}
                   </div>
-                  {['front', 'rear', 'left', 'right'].some(id => !claimData.photoFiles[id as keyof typeof claimData.photoFiles]) && (
+                  {['front', 'rear', 'left', 'right'].some(id => {
+                    const file = claimData.photoFiles[id as keyof typeof claimData.photoFiles];
+                    const preview = claimData.photos[id as keyof typeof claimData.photos];
+                    return !file && !preview; // Only show warning if photo is completely missing
+                  }) && (
                     <div className="mt-3 text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                      ⚠️ Some photos may not be ready for upload. Please go back to Step 3 and retake missing photos.
+                      ⚠️ Some photos are missing. Please go back to Step 3 and capture all required photos.
                     </div>
                   )}
                 </div>
