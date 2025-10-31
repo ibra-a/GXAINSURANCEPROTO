@@ -30,6 +30,7 @@ interface ClaimData {
   driverLicense?: string;
   driverPhone: string;
   driverEmail?: string;
+  policyNumber?: string;
   vehicleRegistration?: string;
   
   // Photos - data URLs for preview
@@ -368,6 +369,7 @@ export default function VehicleClaimFlow() {
         claim_number: claimNumber,
         status: 'pending',
         user_name: claimData.driverName || 'Unknown',
+        policy_number: claimData.policyNumber || `GXA-${Date.now()}`, // Required field - generate if not provided
         contact_email: claimData.driverEmail || 'user@example.com',
         contact_phone: claimData.driverPhone || '',
         accident_datetime: accidentDateTime,
