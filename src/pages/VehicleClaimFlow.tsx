@@ -362,8 +362,10 @@ export default function VehicleClaimFlow() {
         claim_type: 'vehicle',
         user_name: claimData.driverName,
         user_email: claimData.driverEmail || 'user@example.com',
+        user_phone: claimData.driverPhone,
         claim_amount: 0, // To be assessed
         submission_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
         details: {
           incidentDate: claimData.incidentDate,
           incidentTime: claimData.incidentTime,
