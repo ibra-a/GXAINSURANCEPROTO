@@ -4,7 +4,7 @@ import gxaLogo from '../assets/gxa-dashboard-logo.png';
 import { 
   Bell, User, FileText, Clock, Users, BarChart, LogOut, Filter,
   TrendingUp, AlertCircle, CheckCircle, XCircle, Activity,
-  Calendar, ChevronRight, Search, Menu, Shield, Zap, Download
+  Calendar, Search, Menu, Shield, Zap, Download
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { claimsService, type Claim } from '../lib/supabase';
@@ -49,7 +49,7 @@ export function AdminDashboard() {
       const pending = allClaims.filter(c => c.status === 'pending').length;
       const approved = allClaims.filter(c => c.status === 'approved').length;
       const rejected = allClaims.filter(c => c.status === 'rejected').length;
-      const totalAmount = allClaims.reduce((sum, c) => sum + 50000, 0); // Mock amount for now
+      const totalAmount = allClaims.reduce((sum) => sum + 50000, 0); // Mock amount for now
       
       setStats({
         total,

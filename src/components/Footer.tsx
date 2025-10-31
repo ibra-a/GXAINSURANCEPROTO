@@ -3,7 +3,7 @@ import gxaLogo from '../assets/gxa-logo.png';
 import { 
   Phone, Mail, MapPin, Clock, Shield, Award, 
   Facebook, Twitter, Linkedin, Instagram,
-  ChevronRight, ExternalLink
+  ChevronRight
 } from 'lucide-react';
 
 export default function Footer() {

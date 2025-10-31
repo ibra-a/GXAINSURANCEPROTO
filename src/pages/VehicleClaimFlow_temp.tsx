@@ -180,11 +180,10 @@ export default function VehicleClaimFlow() {
         ...prev.photoFiles,
         [photoId]: file
       },
-      // Store metadata temporarily
-      ...{ photoMetadata: {
-        ...(prev as any).photoMetadata,
+      photoMetadata: {
+        ...prev.photoMetadata,
         [photoId]: metadata
-      }}
+      }
     } as any));
     
     // Create preview
@@ -226,9 +225,9 @@ export default function VehicleClaimFlow() {
           lng: position.coords.longitude,
           accuracy: position.coords.accuracy
         };
-      } catch (error) {
-        console.log('Location not available:', error);
       }
+    } catch (error) {
+      console.log('Location not available:', error);
     }
     return null;
   };
@@ -343,14 +342,20 @@ export default function VehicleClaimFlow() {
           const filePath = `claims/${claimNumber}/${fileName}`;
           
           // Upload with metadata
-          const { url, error } = await storageService.uploadClaimPhoto(
+          const { data, error } = await storageService.uploadClaimPhoto(
             file as File, 
             filePath, 
             photoMetadata[key] || {}
           );
           
-          if (!error && url) {
-            photoUrls[key] = url;
+          if (!error && data) {
+            // Get public URL
+            const { data: { publicUrl } } = supabase
+              .storage
+              .from('claim-photos')
+              .getPublicUrl(filePath);
+              
+            photoUrls[key] = publicUrl;
           }
         }
       }
