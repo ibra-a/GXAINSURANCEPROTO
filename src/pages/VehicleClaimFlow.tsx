@@ -9,6 +9,7 @@ import {
 import { Button } from '../components/ui/button';
 import gxaLogo from '../assets/gxa-dashboard-logo.png';
 import { supabase, storageService } from '../lib/supabase';
+import CameraCapture from '../components/CameraCapture';
 
 interface ClaimData {
   // Incident details
@@ -65,6 +66,8 @@ export default function VehicleClaimFlow() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [currentPhotoType, setCurrentPhotoType] = useState<string>('');
   const [claimData, setClaimData] = useState<ClaimData>({
     incidentDate: '',
     incidentTime: '',
@@ -107,23 +110,20 @@ export default function VehicleClaimFlow() {
   ];
 
   const handlePhotoCapture = async (photoId: string) => {
-    // Direct file input approach for better mobile compatibility
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    
-    // Set capture attribute to force camera on mobile
-    input.setAttribute('capture', 'environment');
-    
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        processCapturedPhoto(file, photoId);
-      }
-    };
-    
-    input.click();
-    return;
+    const photo = photoTypes.find(p => p.id === photoId);
+    if (photo) {
+      setCurrentPhotoType(photo.label);
+      setShowCamera(true);
+    }
+  };
+
+  const handleCameraCapture = (file: File, metadata: any) => {
+    const photoId = photoTypes.find(p => p.label === currentPhotoType)?.id;
+    if (photoId) {
+      processCapturedPhoto(file, photoId, metadata);
+      setShowCamera(false);
+      setCurrentPhotoType('');
+    }
     
     // Advanced camera API (kept for future use)
     if (false) {
@@ -433,7 +433,7 @@ export default function VehicleClaimFlow() {
   };
   
   // Process captured photo from either camera or file input
-  const processCapturedPhoto = async (file: File, photoId: string) => {
+  const processCapturedPhoto = async (file: File, photoId: string, captureMetadata?: any) => {
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       alert('Photo size must be less than 10MB');
@@ -447,7 +447,7 @@ export default function VehicleClaimFlow() {
     }
     
     // Create comprehensive metadata for audit trail
-    const metadata = {
+    const metadata = captureMetadata || {
       captureTime: new Date().toISOString(),
       deviceInfo: navigator.userAgent,
       platform: navigator.platform,
@@ -566,22 +566,59 @@ export default function VehicleClaimFlow() {
     }));
   };
 
-  const canProceedToNext = () => {
-    switch (currentStep) {
-      case 1:
-        return claimData.incidentDate && claimData.incidentTime && claimData.incidentLocation;
-      case 2:
-        return claimData.vehicleMake && claimData.vehicleModel && claimData.vehiclePlate;
-      case 3:
-        return claimData.photos.front && claimData.photos.rear && 
-               claimData.photos.left && claimData.photos.right;
-      case 4:
-        return true; // Documents are optional
-      case 5:
-        return true;
-      default:
-        return false;
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const validateStep = (step: number): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    switch (step) {
+      case 1: // Incident Details
+        if (!claimData.incidentDate) errors.push('Incident date is required');
+        if (!claimData.incidentTime) errors.push('Incident time is required');
+        if (!claimData.incidentLocation.trim()) errors.push('Incident location is required');
+        if (claimData.policeReport && !claimData.policeReportNumber?.trim()) {
+          errors.push('Police report number is required when report is filed');
+        }
+        // Validate date is not in future
+        if (claimData.incidentDate && new Date(claimData.incidentDate) > new Date()) {
+          errors.push('Incident date cannot be in the future');
+        }
+        break;
+
+      case 2: // Vehicle & Driver
+        if (!claimData.vehicleMake.trim()) errors.push('Vehicle make is required');
+        if (!claimData.vehicleModel.trim()) errors.push('Vehicle model is required');
+        if (!claimData.vehicleYear.trim()) errors.push('Vehicle year is required');
+        if (!claimData.vehiclePlate.trim()) errors.push('License plate is required');
+        if (!claimData.driverName.trim()) errors.push('Driver name is required');
+        if (!claimData.driverPhone.trim()) errors.push('Driver phone is required');
+        // Validate phone format
+        if (claimData.driverPhone && !claimData.driverPhone.match(/^[\d\s\-\+\(\)]+$/)) {
+          errors.push('Invalid phone number format');
+        }
+        break;
+
+      case 3: // Photo Evidence
+        if (!claimData.photos.front) errors.push('Front photo is required');
+        if (!claimData.photos.rear) errors.push('Rear photo is required');
+        if (!claimData.photos.left) errors.push('Left side photo is required');
+        if (!claimData.photos.right) errors.push('Right side photo is required');
+        break;
+
+      case 4: // Documents
+        if (!claimData.accidentDescription.trim()) errors.push('Accident description is required');
+        if (claimData.accidentDescription && claimData.accidentDescription.trim().length < 50) {
+          errors.push('Please provide more details (at least 50 characters)');
+        }
+        break;
     }
+
+    return { valid: errors.length === 0, errors };
+  };
+
+  const canProceedToNext = () => {
+    const validation = validateStep(currentStep);
+    return validation.valid;
   };
 
   const handleSubmit = async () => {
@@ -668,6 +705,18 @@ export default function VehicleClaimFlow() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Camera Capture Modal */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => {
+            setShowCamera(false);
+            setCurrentPhotoType('');
+          }}
+          photoType={currentPhotoType}
+          instructions={`Position your vehicle's ${currentPhotoType.toLowerCase()} in the frame`}
+        />
+      )}
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -795,6 +844,23 @@ export default function VehicleClaimFlow() {
 
       {/* Form Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-1">Please fix the following errors:</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow-sm p-6">
           {/* Step 1: Incident Details */}
           {currentStep === 1 && (
@@ -1590,19 +1656,24 @@ export default function VehicleClaimFlow() {
             {/* Next/Submit Button */}
             {currentStep < totalSteps ? (
               <Button
-                onClick={() => setCurrentStep(prev => Math.min(totalSteps, prev + 1))}
-                disabled={!canProceedToNext()}
+                onClick={() => {
+                  const validation = validateStep(currentStep);
+                  if (validation.valid) {
+                    setValidationErrors([]);
+                    setCurrentStep(prev => Math.min(totalSteps, prev + 1));
+                  } else {
+                    setValidationErrors(validation.errors);
+                  }
+                }}
                 className={`
                   group relative overflow-hidden transition-all duration-300 gap-2
-                  ${!canProceedToNext() ? 'opacity-50' : 'hover:shadow-lg hover:scale-105'}
                   bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                  hover:shadow-lg hover:scale-105
                 `}
               >
                 <span className="font-medium">Next Step</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                {canProceedToNext() && (
-                  <ChevronRight className="h-4 w-4 opacity-50 animate-pulse" />
-                )}
+                <ChevronRight className="h-4 w-4 opacity-50 animate-pulse" />
               </Button>
             ) : (
               <Button
