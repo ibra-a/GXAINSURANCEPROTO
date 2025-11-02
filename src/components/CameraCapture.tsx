@@ -19,15 +19,15 @@ export default function CameraCapture({
   const [metadata, setMetadata] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const capturePhoto = useCallback(async (file: File) => {
-    // Create preview
+  const capturePhoto = useCallback((file: File) => {
+    // Create preview immediately
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
 
-    // Capture metadata
+    // Create base metadata immediately (don't wait for location)
     const captureMetadata = {
       timestamp: new Date().toISOString(),
       photoType,
@@ -41,28 +41,35 @@ export default function CameraCapture({
       location: null as GeolocationPosition | null,
     };
 
-    // Try to get location
-    if ('geolocation' in navigator) {
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 5000,
-            enableHighAccuracy: true
-          });
-        });
-        captureMetadata.location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp
-        } as any;
-      } catch (error) {
-        console.log('Location access denied or unavailable');
-      }
-    }
-
+    // Set file and metadata immediately so "Use Photo" button works
     setCapturedFile(file);
     setMetadata(captureMetadata);
+
+    // Try to get location in background (non-blocking)
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Update metadata with location if available
+          setMetadata((prev: any) => ({
+            ...prev,
+            location: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: position.timestamp
+            }
+          }));
+        },
+        (error) => {
+          console.log('Location not available:', error);
+          // Don't block - location is optional
+        },
+        {
+          timeout: 3000, // Faster timeout
+          enableHighAccuracy: false // Don't wait for high accuracy
+        }
+      );
+    }
   }, [photoType]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,8 +90,25 @@ export default function CameraCapture({
   };
 
   const handleUsePhoto = () => {
-    if (capturedFile && metadata) {
-      onCapture(capturedFile, metadata);
+    if (capturedFile) {
+      // Use current metadata (even if location is still null - that's OK)
+      const metadataToSend = metadata || {
+        timestamp: new Date().toISOString(),
+        photoType,
+        fileSize: capturedFile.size,
+        mimeType: capturedFile.type,
+      };
+      
+      console.log('Using photo:', {
+        fileName: capturedFile.name,
+        fileSize: capturedFile.size,
+        hasMetadata: !!metadata
+      });
+      
+      onCapture(capturedFile, metadataToSend);
+    } else {
+      console.error('❌ No file captured!');
+      alert('No photo captured. Please try again.');
     }
   };
 
