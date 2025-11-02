@@ -76,6 +76,7 @@ export default function VehicleClaimFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [currentPhotoType, setCurrentPhotoType] = useState<string>('');
+  const [currentPhotoId, setCurrentPhotoId] = useState<string>(''); // Store photoId directly to avoid lookup issues
   const [claimData, setClaimData] = useState<ClaimData>({
     incidentDate: '',
     incidentTime: '',
@@ -124,17 +125,40 @@ export default function VehicleClaimFlow() {
   const handlePhotoCapture = async (photoId: string) => {
     const photo = photoTypes.find(p => p.id === photoId);
     if (photo) {
+      setCurrentPhotoId(photoId); // Store photoId directly - CRITICAL FIX
       setCurrentPhotoType(photo.label);
       setShowCamera(true);
     }
   };
 
   const handleCameraCapture = (file: File, metadata: any) => {
-    const photoId = photoTypes.find(p => p.label === currentPhotoType)?.id;
-    if (photoId) {
+    // Use stored photoId directly instead of looking it up from state
+    const photoId = currentPhotoId;
+    
+    if (!photoId) {
+      console.error('❌ CRITICAL: photoId is missing! Cannot save photo.');
+      console.error('File:', file.name, file.size, file.type);
+      console.error('Current state:', { currentPhotoId, currentPhotoType });
+      alert('Error: Could not save photo. Please try capturing again.');
+      return;
+    }
+
+    if (!file || file.size === 0) {
+      console.error('❌ Invalid file provided:', file);
+      alert('Error: Invalid photo file. Please try again.');
+      return;
+    }
+
+    console.log(`✓ Saving photo for ${photoId} (${file.size} bytes)`);
+    
+    try {
       processCapturedPhoto(file, photoId, metadata);
       setShowCamera(false);
       setCurrentPhotoType('');
+      setCurrentPhotoId(''); // Clear after successful save
+    } catch (error) {
+      console.error('❌ Error processing photo:', error);
+      alert('Error saving photo. Please try again.');
     }
   };
   
@@ -153,7 +177,10 @@ export default function VehicleClaimFlow() {
     }
     
     // Create comprehensive metadata for audit trail
-    const metadata = captureMetadata || {
+    // Don't await location - get it separately to avoid blocking
+    const locationPromise = getLocationIfAvailable();
+    
+    const baseMetadata = captureMetadata || {
       captureTime: new Date().toISOString(),
       deviceInfo: navigator.userAgent,
       platform: navigator.platform,
@@ -162,8 +189,6 @@ export default function VehicleClaimFlow() {
       size: file.size,
       type: file.type,
       lastModified: new Date(file.lastModified).toISOString(),
-      // Attempt to get location if permission granted
-      location: await getLocationIfAvailable(),
       // Device details for fraud detection
       screen: {
         width: window.screen.width,
@@ -173,20 +198,40 @@ export default function VehicleClaimFlow() {
       // Check if file appears to be from camera
       isLikelyCamera: file.name.match(/^(IMG_|DSC|DCIM|Camera|Photo|camera_)/i) !== null
     };
+
+    // Get location without blocking
+    locationPromise.then(location => {
+      if (location) {
+        setClaimData(prev => ({
+          ...prev,
+          photoMetadata: {
+            ...(prev as any).photoMetadata,
+            [photoId]: {
+              ...(prev as any).photoMetadata?.[photoId],
+              location
+            }
+          }
+        }));
+      }
+    }).catch(err => console.log('Location not available:', err));
+
+    const metadata = baseMetadata;
     
-    // Store the file for upload
-    setClaimData(prev => ({
-      ...prev,
-      photoFiles: {
-        ...prev.photoFiles,
-        [photoId]: file
-      },
-      // Store metadata temporarily
-      ...{ photoMetadata: {
-        ...(prev as any).photoMetadata,
-        [photoId]: metadata
-      }}
-    } as any));
+    // Store the file for upload - FIXED: Properly merge metadata object
+    setClaimData(prev => {
+      const currentMetadata = (prev as any).photoMetadata || {};
+      return {
+        ...prev,
+        photoFiles: {
+          ...prev.photoFiles,
+          [photoId]: file
+        },
+        photoMetadata: {
+          ...currentMetadata,
+          [photoId]: metadata
+        }
+      };
+    });
     
     // Create preview
     const reader = new FileReader();
@@ -487,6 +532,7 @@ export default function VehicleClaimFlow() {
           onClose={() => {
             setShowCamera(false);
             setCurrentPhotoType('');
+            setCurrentPhotoId(''); // Clear photoId when closing
           }}
           photoType={currentPhotoType}
           instructions={`Position your vehicle's ${currentPhotoType.toLowerCase()} in the frame`}

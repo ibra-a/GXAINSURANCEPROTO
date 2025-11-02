@@ -94,39 +94,187 @@ export const claimsService = {
 };
 
 export const storageService = {
+  // Helper function to compress image for upload (especially important for mobile)
+  async compressImageFile(file: File, maxSizeMB: number = 2): Promise<File> {
+    // If file is already small enough, return as-is
+    if (file.size <= maxSizeMB * 1024 * 1024) {
+      return file;
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1920;
+          const MAX_HEIGHT = 1920;
+          
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = (height * MAX_WIDTH) / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = (width * MAX_HEIGHT) / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          // Draw and compress
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Try different quality levels until file size is acceptable
+          let quality = 0.9;
+          const tryCompress = () => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+
+                const compressedFile = new File(
+                  [blob],
+                  file.name.replace(/\.[^/.]+$/, '') + '.jpg',
+                  { type: 'image/jpeg', lastModified: Date.now() }
+                );
+
+                // If still too large and quality can be reduced, try again
+                if (compressedFile.size > maxSizeMB * 1024 * 1024 && quality > 0.5) {
+                  quality -= 0.1;
+                  tryCompress();
+                } else {
+                  resolve(compressedFile);
+                }
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+
+          tryCompress();
+        };
+
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  },
+
   async uploadClaimPhoto(file: File, claimNumber: string, photoType: string, additionalMetadata?: any): Promise<{ url: string | null; error: any }> {
     try {
+      // Validate file
+      if (!file || !(file instanceof File)) {
+        throw new Error('Invalid file provided');
+      }
+
+      if (file.size === 0) {
+        throw new Error('File is empty');
+      }
+
+      // Compress large files (especially important for mobile)
+      let fileToUpload = file;
+      if (file.size > 2 * 1024 * 1024) { // Larger than 2MB
+        console.log(`Compressing ${photoType} photo (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+        try {
+          fileToUpload = await this.compressImageFile(file, 2);
+          console.log(`Compressed to ${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB`);
+        } catch (compressError) {
+          console.warn('Compression failed, uploading original:', compressError);
+          // Continue with original file if compression fails
+        }
+      }
+
       // Create a unique filename with timestamp to prevent overwrites
       const timestamp = Date.now();
-      const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
+      const fileExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'jpg';
       // Sanitize the filename to remove any special characters
       const safePhotoType = photoType.replace(/[^a-zA-Z0-9-_]/g, '');
       const safeClaimNumber = claimNumber.replace(/[^a-zA-Z0-9-_]/g, '');
       const fileName = `${safePhotoType}-${timestamp}.${fileExt}`;
       const filePath = `${safeClaimNumber}/${fileName}`;
 
-      // Add metadata for audit trail
+      // Add metadata for audit trail (but keep it minimal to avoid "Load failed" errors)
       const metadata = {
-        claimNumber,
-        photoType,
-        originalName: file.name,
+        claimNumber: safeClaimNumber,
+        photoType: safePhotoType,
+        originalName: file.name || fileName,
         uploadTime: new Date().toISOString(),
-        fileSize: file.size.toString(),
-        mimeType: file.type,
-        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
-        ...additionalMetadata // Merge any additional metadata passed from camera capture
+        fileSize: fileToUpload.size.toString(),
+        mimeType: fileToUpload.type || 'image/jpeg',
+        // Don't include large metadata that might cause issues
+        ...(additionalMetadata && typeof additionalMetadata === 'object' ? {
+          captureTime: additionalMetadata.captureTime,
+          photoType: additionalMetadata.photoType
+        } : {})
       };
 
-      // Upload to Supabase Storage with metadata
-      const { error } = await supabase.storage
-        .from('claim-photos')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-          metadata
-        });
+      console.log(`Uploading ${photoType} photo to ${filePath} (${(fileToUpload.size / 1024).toFixed(2)}KB)...`);
 
-      if (error) throw error;
+      // Upload with retry logic for network failures
+      let data, error;
+      const maxRetries = 3;
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        const result = await supabase.storage
+          .from('claim-photos')
+          .upload(filePath, fileToUpload, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: fileToUpload.type || 'image/jpeg',
+            metadata: metadata
+          });
+
+        data = result.data;
+        error = result.error;
+
+        if (!error) {
+          break; // Success!
+        }
+
+        // If error is not retryable (like file already exists), break immediately
+        if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+          break;
+        }
+
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.warn(`Upload attempt ${retryCount} failed, retrying... (${retryCount}/${maxRetries})`);
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
+
+      if (error) {
+        console.error('Upload error details after retries:', error);
+        // Provide more helpful error message
+        const errorMessage = error.message || JSON.stringify(error);
+        if (errorMessage.includes('Load failed') || errorMessage.includes('network')) {
+          throw new Error(`Network error uploading photo. Please check your internet connection and try again.`);
+        }
+        throw error;
+      }
+
+      console.log('Upload successful, data:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
