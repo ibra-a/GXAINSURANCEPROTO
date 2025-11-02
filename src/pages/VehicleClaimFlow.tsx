@@ -411,19 +411,26 @@ export default function VehicleClaimFlow() {
     }
     
     setSubmitting(true);
+    
+    // Declare variables outside try block so they're accessible in catch
+    let photoUrls: Record<string, string> = {};
+    let uploadedCount = 0;
+    let photosToUpload: Array<[string, File | null]> = [];
+    let claimNumber = '';
+    
     try {
       // Generate claim number with timestamp for uniqueness
       const timestamp = Date.now();
       const randomNum = Math.floor(Math.random() * 1000);
-      const claimNumber = `GXAVC${timestamp}${randomNum}`;
+      claimNumber = `GXAVC${timestamp}${randomNum}`;
       
       // Upload photos to Supabase Storage
-      const photoUrls: Record<string, string> = {};
+      photoUrls = {};
       const photoMetadata = (claimData as any).photoMetadata || {};
-      let uploadedCount = 0;
+      uploadedCount = 0;
       
       // Validate that we have photos to upload
-      const photosToUpload = Object.entries(claimData.photoFiles).filter(([_, file]) => file);
+      photosToUpload = Object.entries(claimData.photoFiles).filter(([_, file]) => file);
       if (photosToUpload.length === 0) {
         throw new Error('No photos found. Please capture at least the required photos before submitting.');
       }
