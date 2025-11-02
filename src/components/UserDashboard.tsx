@@ -27,6 +27,7 @@ export function UserDashboard() {
   });
 
   // Current user - in real app, this would come from auth
+  // For prototype: Show all claims regardless of user (demo mode)
   const currentUser = "Ahmed Mohamed Hassan";
 
   useEffect(() => {
@@ -36,14 +37,23 @@ export function UserDashboard() {
   const loadUserData = async () => {
     setLoading(true);
     try {
-      // Load user claims
-      const { data: claimsData, error: claimsError } = await claimsService.getUserClaims(currentUser);
+      // For prototype: Get ALL claims instead of filtering by user
+      // This ensures all claims (GXAVC, CLM-, etc.) are visible
+      const { data: claimsData, error: claimsError } = await claimsService.getAllClaims();
       if (!claimsError && claimsData) {
-        setClaims(claimsData);
+        // Sort by submission date (newest first)
+        const sortedClaims = [...claimsData].sort((a, b) => {
+          const dateA = a.submission_datetime || a.created_at || '';
+          const dateB = b.submission_datetime || b.created_at || '';
+          return dateB.localeCompare(dateA);
+        });
+        setClaims(sortedClaims);
+      } else if (claimsError) {
+        console.error('Error loading claims:', claimsError);
       }
 
-      // Load stats
-      const { data: statsData, error: statsError } = await claimsService.getClaimStats(currentUser);
+      // Load stats for current user (or all if no user specified)
+      const { data: statsData, error: statsError } = await claimsService.getClaimStats();
       if (!statsError && statsData) {
         setStats(statsData);
       }
@@ -335,7 +345,7 @@ export function UserDashboard() {
         </div>
 
         {/* Recent Claims from Supabase */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
+        <div id="claims-section" className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex items-center justify-between">
               <div>
@@ -345,6 +355,11 @@ export function UserDashboard() {
               <Button 
                 variant="outline" 
                 size="sm" 
+                onClick={() => {
+                  // Scroll to claims section (already visible, but can add smooth scroll)
+                  const claimsSection = document.getElementById('claims-section');
+                  claimsSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all"
               >
                 View All Claims
@@ -382,6 +397,7 @@ export function UserDashboard() {
                 return (
                   <div 
                     key={claim.id} 
+                    onClick={() => navigate(`/user/claims/${claim.claim_number}`)}
                     className="p-6 hover:bg-gray-50 transition-all cursor-pointer group animate-fade-in border-l-4 border-transparent hover:border-blue-500"
                     style={{ animationDelay: `${claims.indexOf(claim) * 100}ms` }}
                   >
@@ -427,7 +443,15 @@ export function UserDashboard() {
                             </div>
                           </div>
                           
-                          <Button variant="ghost" size="sm" className="gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/user/claims/${claim.claim_number}`);
+                            }}
+                          >
                             View Details
                             <ChevronRight className="h-4 w-4" />
                           </Button>

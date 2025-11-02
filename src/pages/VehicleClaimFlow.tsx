@@ -433,7 +433,7 @@ export default function VehicleClaimFlow() {
       for (const [key, file] of photosToUpload) {
         if (file) {
           try {
-            console.log(`Uploading ${key} photo...`);
+            console.log(`Uploading ${key} photo (${(file.size / 1024).toFixed(2)}KB)...`);
             // Upload with the correct parameters and metadata if available
             const { url, error } = await storageService.uploadClaimPhoto(
               file as File, 
@@ -442,22 +442,39 @@ export default function VehicleClaimFlow() {
               photoMetadata[key] // Pass additional metadata from camera capture
             );
             
-            if (!error && url) {
-              photoUrls[key] = url;
-              uploadedCount++;
-              console.log(`✓ ${key} photo uploaded successfully`);
-            } else if (error) {
+            if (error) {
               console.error(`Error uploading ${key} photo:`, error);
               throw new Error(`Failed to upload ${key} photo: ${error.message || JSON.stringify(error)}`);
             }
+            
+            if (!url) {
+              console.error(`No URL returned for ${key} photo`);
+              throw new Error(`Upload completed but no URL returned for ${key} photo. Please try again.`);
+            }
+            
+            // Verify the URL is valid
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              console.error(`Invalid URL format for ${key} photo:`, url);
+              throw new Error(`Invalid URL returned for ${key} photo. Please try again.`);
+            }
+            
+            photoUrls[key] = url;
+            uploadedCount++;
+            console.log(`✓ ${key} photo uploaded successfully: ${url}`);
           } catch (uploadError: any) {
             console.error(`Upload failed for ${key}:`, uploadError);
-            throw new Error(`Photo upload failed: ${uploadError.message || uploadError}`);
+            // Stop all uploads and throw error to prevent claim creation with missing photos
+            throw new Error(`Photo upload failed for ${key}: ${uploadError.message || uploadError}`);
           }
         }
       }
       
-      console.log(`Successfully uploaded ${uploadedCount}/${photosToUpload.length} photos`);
+      // Final validation: ensure we uploaded all required photos
+      if (uploadedCount !== photosToUpload.length) {
+        throw new Error(`Upload incomplete: Only ${uploadedCount}/${photosToUpload.length} photos uploaded successfully. Please try again.`);
+      }
+      
+      console.log(`✓ Successfully uploaded all ${uploadedCount} photos to storage`);
       
       // Combine date and time for accident_datetime
       const accidentDateTime = claimData.incidentDate && claimData.incidentTime
@@ -465,7 +482,14 @@ export default function VehicleClaimFlow() {
         : new Date().toISOString();
 
       // Convert photoUrls object to array format expected by database
-      const photoUrlsArray = Object.values(photoUrls).filter(url => url);
+      const photoUrlsArray = Object.values(photoUrls).filter(url => url && url.length > 0);
+      
+      // Final check: Don't create claim if no photo URLs
+      if (photoUrlsArray.length === 0) {
+        throw new Error('No photo URLs available. Photos may not have uploaded correctly. Please try again.');
+      }
+      
+      console.log(`Creating claim record with ${photoUrlsArray.length} photo URLs...`);
 
       // Create claim record matching the actual database schema
       const claimRecord: any = {
@@ -511,9 +535,25 @@ export default function VehicleClaimFlow() {
       });
       
     } catch (error: any) {
-      console.error('Error submitting claim:', error);
+      console.error('❌ ERROR submitting claim:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+        photoUrls,
+        uploadedCount,
+        photosToUpload: photosToUpload.length
+      });
+      
       const errorMessage = error?.message || 'Unknown error occurred';
-      alert(`Error submitting claim: ${errorMessage}\n\nPlease check the console for more details and try again.`);
+      
+      // Show detailed error to user
+      if (errorMessage.includes('upload') || errorMessage.includes('photo')) {
+        alert(`Photo Upload Error:\n\n${errorMessage}\n\nPlease:\n1. Check your internet connection\n2. Try capturing photos again\n3. Ensure you have permission to upload photos\n\nSee console for more details.`);
+      } else {
+        alert(`Error submitting claim:\n\n${errorMessage}\n\nPlease check the console for more details and try again.`);
+      }
+      
       // Don't navigate on error - let user retry
     } finally {
       setSubmitting(false);
@@ -1553,3 +1593,4 @@ export default function VehicleClaimFlow() {
     </div>
   );
 }
+

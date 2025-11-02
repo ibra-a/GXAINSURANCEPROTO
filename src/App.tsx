@@ -9,6 +9,7 @@ import ClaimSuccess from './pages/ClaimSuccess';
 import CameraTest from './pages/CameraTest';
 import MobileCameraTest from './pages/MobileCameraTest';
 import ClaimReview from './pages/admin/ClaimReview';
+import ClaimDetails from './pages/user/ClaimDetails';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/user/claims/:claimNumber" element={<ClaimDetails />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/claims/:claimId" element={<ClaimReview />} />
         <Route path="/design-system" element={<DesignSystem />} />

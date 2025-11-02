@@ -6,7 +6,7 @@ import {
   AlertCircle, Download, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { claimsService, type Claim } from '../../lib/supabase';
+import { claimsService, storageService, type Claim } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 
 export default function ClaimReview() {
@@ -239,9 +239,16 @@ export default function ClaimReview() {
                 <div className="relative">
                   <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                     <img 
-                      src={claim.photo_urls[currentPhotoIndex]} 
+                      src={storageService.getDisplayUrl(claim.photo_urls[currentPhotoIndex])} 
                       alt={`Evidence ${currentPhotoIndex + 1}`}
                       className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.error('Image failed to load:', claim.photo_urls[currentPhotoIndex]);
+                        // Fallback to original URL without optimization
+                        const img = e.target as HTMLImageElement;
+                        img.src = claim.photo_urls[currentPhotoIndex];
+                      }}
+                      loading="lazy"
                     />
                   </div>
                   {claim.photo_urls.length > 1 && (

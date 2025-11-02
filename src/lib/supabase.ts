@@ -276,16 +276,47 @@ export const storageService = {
 
       console.log('Upload successful, data:', data);
 
+      // Note: We skip verification listing as it can fail due to timing/caching
+      // The upload success (data returned without error) is sufficient verification
+      // If there was an error, it would have been thrown above
+      
+      // Optional: Try to verify file exists (with timeout and retry)
+      // But don't fail if verification fails - upload success is primary indicator
+      try {
+        // Small delay to allow storage to propagate
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const { data: verifyData } = await supabase.storage
+          .from('claim-photos')
+          .list(safeClaimNumber, {
+            limit: 1000
+          });
+
+        const fileExists = verifyData?.some(file => file.name === fileName);
+        
+        if (fileExists) {
+          console.log(`✓ Verified: ${fileName} exists in storage`);
+        } else {
+          console.warn(`⚠ Verification: ${fileName} not immediately visible (may be caching issue)`);
+          // Don't throw - upload was successful, this is just verification
+        }
+      } catch (verifyError) {
+        console.warn('Verification check failed (non-critical):', verifyError);
+        // Don't throw - upload was successful
+      }
+
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('claim-photos')
         .getPublicUrl(filePath);
 
       // Log successful upload for audit
-      console.log('Photo uploaded:', {
+      console.log('Photo uploaded successfully:', {
         claimNumber,
         photoType,
         filePath,
+        publicUrl,
+        fileSize: (fileToUpload.size / 1024).toFixed(2) + 'KB',
         timestamp: new Date().toISOString()
       });
 
@@ -333,6 +364,38 @@ export const storageService = {
       console.error('Error deleting photos:', error);
       return { success: false, error };
     }
+  },
+
+  // Get full photo URL (ensures URL is complete and accessible)
+  getPhotoUrl(photoUrl: string | null | undefined): string {
+    if (!photoUrl) return '';
+    
+    // If already a full URL, return as-is
+    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
+      return photoUrl;
+    }
+    
+    // If it's a path, construct full Supabase public URL
+    const cleanPath = photoUrl.startsWith('/') ? photoUrl.slice(1) : photoUrl;
+    const { data } = supabase.storage
+      .from('claim-photos')
+      .getPublicUrl(cleanPath);
+    
+    return data.publicUrl;
+  },
+
+  // Note: Supabase Storage doesn't support server-side image transformation
+  // For prototype, we'll use full URLs and rely on browser optimization
+  // In production, you'd want to use a CDN with image optimization
+  getThumbnailUrl(photoUrl: string): string {
+    // For now, return the full URL - browser will handle sizing
+    return this.getPhotoUrl(photoUrl);
+  },
+
+  // Get display URL for viewing
+  getDisplayUrl(photoUrl: string): string {
+    // Return full URL - images are already compressed during upload
+    return this.getPhotoUrl(photoUrl);
   },
 
   // Method to verify photo authenticity and retrieve metadata (for admin use)
