@@ -25,21 +25,61 @@ export function UserDashboard() {
     approved: 0,
     rejected: 0
   });
+  const [userInfo, setUserInfo] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    policyNumber: string;
+  } | null>(null);
+  const [currentUser, setCurrentUser] = useState<string>("Ahmed Mohamed Hassan");
 
-  // Current user - in real app, this would come from auth
-  // For prototype: Show all claims regardless of user (demo mode)
-  const currentUser = "Ahmed Mohamed Hassan";
+  // Initialize user info and current user from sessionStorage
+  useEffect(() => {
+    const demoUser = sessionStorage.getItem('demoUser');
+    if (demoUser) {
+      try {
+        const user = JSON.parse(demoUser);
+        setUserInfo(user);
+        // Map both spellings to the database name
+        if (user.name.toLowerCase().includes('ahmod')) {
+          setCurrentUser("Ahmed Mohamed Hassan"); // Database uses "Ahmed"
+        } else {
+          setCurrentUser(user.name);
+        }
+      } catch (e) {
+        console.error('Error parsing demo user:', e);
+        // Default fallback
+        setUserInfo({
+          name: "Ahmed Mohamed Hassan",
+          email: "ahmed.hassan@example.dj",
+          phone: "+253 77 12 34 56",
+          policyNumber: "GXA-DJ-2024-1547"
+        });
+        setCurrentUser("Ahmed Mohamed Hassan");
+      }
+    } else {
+      // Default demo user
+      setUserInfo({
+        name: "Ahmed Mohamed Hassan",
+        email: "ahmed.hassan@example.dj",
+        phone: "+253 77 12 34 56",
+        policyNumber: "GXA-DJ-2024-1547"
+      });
+      setCurrentUser("Ahmed Mohamed Hassan");
+    }
+  }, []);
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (currentUser) {
+      loadUserData();
+    }
+  }, [currentUser]);
 
   const loadUserData = async () => {
     setLoading(true);
     try {
-      // For prototype: Get ALL claims instead of filtering by user
-      // This ensures all claims (GXAVC, CLM-, etc.) are visible
-      const { data: claimsData, error: claimsError } = await claimsService.getAllClaims();
+      // Get user-specific claims
+      const { data: claimsData, error: claimsError } = await claimsService.getUserClaims(currentUser);
       if (!claimsError && claimsData) {
         // Sort by submission date (newest first)
         const sortedClaims = [...claimsData].sort((a, b) => {
@@ -52,8 +92,8 @@ export function UserDashboard() {
         console.error('Error loading claims:', claimsError);
       }
 
-      // Load stats for current user (or all if no user specified)
-      const { data: statsData, error: statsError } = await claimsService.getClaimStats();
+      // Load stats for current user
+      const { data: statsData, error: statsError } = await claimsService.getClaimStats(currentUser);
       if (!statsError && statsData) {
         setStats(statsData);
       }
@@ -174,7 +214,7 @@ export function UserDashboard() {
               <span className="text-blue-100 text-sm">GXA Digital Claims Platform</span>
             </div>
             <h2 className="text-3xl font-bold mb-2">
-              Welcome back, {currentUser}
+              Welcome back, {userInfo?.name || currentUser}
             </h2>
             <p className="text-blue-100 text-lg mb-6">
               Submit, track, and manage your claims digitally - anytime, anywhere

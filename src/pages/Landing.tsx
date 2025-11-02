@@ -7,7 +7,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   const handleUserAccess = () => {
-    navigate('/user/dashboard');
+    navigate('/user/login');
   };
 
   const handleAdminAccess = () => {

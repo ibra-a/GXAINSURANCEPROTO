@@ -164,7 +164,7 @@ export default function Navbar() {
               {!isAuthPage ? (
                 <>
                   <button
-                    onClick={() => navigate('/user/dashboard')}
+                    onClick={() => navigate('/user/login')}
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all",
                       isLandingPage ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-blue-600"

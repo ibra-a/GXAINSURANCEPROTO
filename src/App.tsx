@@ -10,12 +10,14 @@ import CameraTest from './pages/CameraTest';
 import MobileCameraTest from './pages/MobileCameraTest';
 import ClaimReview from './pages/admin/ClaimReview';
 import ClaimDetails from './pages/user/ClaimDetails';
+import Login from './pages/user/Login';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/user/login" element={<Login />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/user/claims/:claimNumber" element={<ClaimDetails />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
